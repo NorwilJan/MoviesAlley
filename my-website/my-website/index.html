@@ -539,7 +539,7 @@
       <div id="similar-movies" style="padding: 1rem 2rem;"></div>
     </div>
     <div class="modal-content" id="modal-content-tv" style="display: none;">
-      <span class="close" onclick="closeTvModal()">×</span>
+      <span class="close" onclick="closeModal()">×</span>
       <div class="modal-body">
         <img id="tv-modal-image" src="" alt="Poster">
         <div class="modal-text">
@@ -957,6 +957,7 @@
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
         if (!data.results || data.results.length === 0) {
+          movieList.innerHTML = `<div class="empty-state">No items found for this ${currentGenre ? 'genre' : currentYear ? 'year' : 'category'}.</div>`;
           return [];
         }
         totalPages = Math.min(data.total_pages || 1, maxPages);
@@ -1014,7 +1015,10 @@
     async function loadMoreMovies(clear = false) {
       if (isLoading || reachedEnd || currentPage > maxPages) return;
       isLoading = true;
-      infiniteLoader.style.display = "";
+      infiniteLoader.style.display = "block";
+      if (clear) {
+        movieList.innerHTML = '<div class="loading-state">Loading...</div>';
+      }
       const items = await fetchMoviesInf(currentPage);
       if (items.length > 0) {
         if (clear) categoryItems = items;
@@ -1286,6 +1290,9 @@
         sectionTitle.textContent = "Your Favorite Movies & TV Shows";
         document.getElementById('nav-favorites').classList.add('favorited');
         genreFilterForm.style.display = 'flex';
+        renderFavorites();
+        infiniteLoader.style.display = 'none';
+        return;
       } else if (newMode === "tv") {
         sectionTitle.textContent = "Trending TV Shows";
         genreFilterForm.style.display = 'flex';
@@ -1301,12 +1308,7 @@
       document.getElementById('year-filter').value = "";
       populateGenreFilter();
       populateYearFilter();
-      if (currentMode === "favorites") {
-        renderFavorites();
-        reachedEnd = true;
-      } else {
-        resetInfiniteScroll();
-      }
+      resetInfiniteScroll();
     }
 
     // Set active nav
@@ -1324,8 +1326,8 @@
       loadedPages.clear();
       reachedEnd = false;
       categoryItems = [];
-      movieList.innerHTML = '';
-      infiniteLoader.style.display = '';
+      movieList.innerHTML = '<div class="loading-state">Loading...</div>';
+      infiniteLoader.style.display = 'block';
       loadMoreMovies(true);
     }
 
