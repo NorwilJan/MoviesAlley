@@ -928,7 +928,7 @@
 
     // Fetch & Render
     async function fetchMoviesInf(page = 1) {
-      console.log(`[fetchMoviesInf] Fetching page ${page} for mode: ${currentMode}, netflixType: ${netflixType}, genre: ${currentGenre}, year: ${currentYear}`);
+      console.log(`[fetchMoviesInf] Fetching page ${page} for mode: ${currentMode}, genre: ${currentGenre}, year: ${currentYear}`);
       if (loadedPages.has(page) || page > maxPages) {
         console.log(`[fetchMoviesInf] Page ${page} already loaded or exceeds maxPages`);
         return [];
@@ -1142,11 +1142,11 @@
       iframe.onload = function() {
         try {
           iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
-          playOverlay.style.display = 'none';
         } catch (e) {
           console.error('[changeServer] Error sending play message:', e);
           showErrorMessage(iframe, 'Failed to start playback. Try another server or check your connection.');
         }
+        playOverlay.style.display = 'none';
       };
       iframe.onerror = () => {
         showErrorMessage(iframe, 'Failed to load video. Try another server or check your connection.');
@@ -1450,29 +1450,18 @@
           switcher.innerHTML = `<button id="netflix-movie-btn" class="btn btn-danger btn-sm" style="margin-right: 7px;">Movies</button>
             <button id="netflix-tv-btn" class="btn btn-danger btn-sm">TV Shows</button>`;
           nav.appendChild(switcher);
-          const switchModeDebounced = throttle((type) => {
-            console.log(`[netflix-switcher] Switching to ${type}`);
-            netflixType = type;
-            document.getElementById('section-title').textContent = `Trending Netflix ${type === "movie" ? "Movies" : "TV Shows"}`;
-            setActiveNav("netflix");
-            genreFilter.value = "";
-            document.getElementById('year-filter').value = "";
-            currentGenre = "";
-            currentYear = "";
-            populateGenreFilter();
-            populateYearFilter();
-            resetInfiniteScroll();
-          }, 300);
           document.getElementById("netflix-movie-btn").onclick = function (ev) {
             ev.preventDefault();
             console.log('[netflix-movie-btn] Clicked');
-            switchModeDebounced("movie");
+            netflixType = "movie";
+            switchModeDebounced("netflix");
             nav.removeChild(switcher);
           };
           document.getElementById("netflix-tv-btn").onclick = function (ev) {
             ev.preventDefault();
             console.log('[netflix-tv-btn] Clicked');
-            switchModeDebounced("tv");
+            netflixType = "tv";
+            switchModeDebounced("netflix");
             nav.removeChild(switcher);
           };
         }
@@ -1526,7 +1515,7 @@
         console.log(`[year-filter] Changed to year: ${currentYear}`);
         if (currentMode === "favorites") {
           const filteredItems = categoryItems.filter(item =>
-            (!currentGenre || item.genre_ids?.includes(parseInt(currentGenre)) || item.genres?.some(g =>g.id === parseInt(currentGenre))) &&
+            (!currentGenre || item.genre_ids?.includes(parseInt(currentGenre)) || item.genres?.some(g => g.id === parseInt(currentGenre))) &&
             (!currentYear || (item.media_type === 'tv' ? (item.first_air_date || '').slice(0, 4) : (item.release_date || '').slice(0, 4)) === currentYear)
           );
           renderMovies(filteredItems, true);
