@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>MovieHouse</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=DM+Serif+Display&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.2/css/bootstrap.min.css">
@@ -12,14 +12,19 @@
       background: #15191e;
       color: #eee;
       font-family: 'Montserrat', Arial, sans-serif;
+      font-size: 1.2rem; /* Increased base font size for TV readability */
     }
     .container-fluid, .tm-container-content {
       background: #15191e !important;
+      padding: 2% 5%; /* Added padding for overscan */
     }
     .navbar, .navbar-nav, .nav-link, .tm-text-primary, .tm-footer, .modal-content, .modal, .tm-search-form, .movie-metadata, .modal-body, .modal-text, .footer, .pagination, .page-link, .chip {
       background: #15191e !important;
       color: #eee !important;
       border-color: #222 !important;
+    }
+    .navbar {
+      padding: 1rem 5%; /* Added padding for overscan */
     }
     .tm-hero {
       background: #1a1f25;
@@ -65,6 +70,36 @@
       .navbar-toggler i {
         font-size: 1.5rem;
         color: #eee;
+      }
+    }
+    @media (min-width: 1920px) {
+      .movie-col {
+        width: 20%; /* Adjusted for better spacing on TVs */
+        flex: 0 0 20%;
+        max-width: 20%;
+      }
+      .navbar-brand .logo-text {
+        font-size: 3.5rem; /* Larger for TV readability */
+      }
+      .nav-link {
+        font-size: 1.4rem; /* Larger for TV readability */
+      }
+      .movie-poster-img {
+        border-radius: 8px;
+      }
+      .play-btn-centered {
+        width: 60px; /* Larger button for TV remotes */
+        height: 60px;
+        font-size: 2em;
+      }
+      .modal-body {
+        font-size: 1.2em; /* Larger text for modal content */
+      }
+      #recently-viewed-list .movie-col {
+        width: 150px !important;
+        min-width: 150px;
+        max-width: 150px;
+        flex: 0 0 150px !important;
       }
     }
     .movie-poster-wrapper, .movie-col {
@@ -170,12 +205,12 @@
     .modal-content {
       background: #23272e !important;
       color: #eee !important;
-      max-height: 95vh;
+      max-height: 90vh; /* Adjusted for overscan */
       overflow-y: auto;
       border-radius: 8px;
-      max-width: 800px;
+      max-width: 90vw; /* Increased for TV screens */
       width: 98vw;
-      margin: 2vw;
+      margin: 5vh auto; /* Centered with safe area */
       position: relative;
       display: flex;
       flex-direction: column;
@@ -244,11 +279,12 @@
       overflow-y: auto;
     }
     #modal-video, #tv-episode-player {
-      width: 98%;
+      width: 100%; /* Adjusted for TV screens */
+      max-width: 90vw; /* Prevent overflow */
       aspect-ratio: 16/9;
-      min-height: 180px;
-      max-height: 46vh;
-      margin: 1rem auto 0;
+      min-height: 200px; /* Increased for visibility */
+      max-height: 70vh; /* Increased for TVs */
+      margin: 1rem auto;
       display: block;
       border-radius: 6px;
       background: #111;
@@ -270,6 +306,16 @@
         max-height: none;
         margin: 0;
         border-radius: 0;
+      }
+    }
+    @media (min-width: 1280px) {
+      #modal-video:fullscreen, #tv-episode-player:fullscreen {
+        width: 100vw;
+        height: 100vh;
+        max-height: none;
+        margin: 0;
+        border-radius: 0;
+        object-fit: contain; /* Ensure video fits without cropping */
       }
     }
     .modal-body {
@@ -664,7 +710,7 @@
   <script>
     // --- CONFIG ---
     const apiKey = '40f1982842db35042e8561b13b38d492';
-    const imageBaseUrl = 'https://image.tmdb.org/t/p/w500';
+    const imageBaseUrl = 'https://image.tmdb.org/t/p/w780'; // Updated to w780 for better TV resolution
     const maxPages = 100;
     const maxItems = 500;
     let lastModalMovie = null;
@@ -1519,22 +1565,20 @@
         setTimeout(() => { btn.textContent = "Share"; }, 1200);
       }
     }
+
+    // Handle URL
     (function() {
       const params = new URLSearchParams(location.search);
       if (params.has("mid")) {
-        fetch(`https://api.themoviedb.org/3/movie/${params.get("mid")}?api_key=${apiKey}`).then(r => r.json()).then(showDetails);
+        fetch(`https://api.themoviedb.org/3/movie/${params.get("mid")}?api_key=${apiKey}`)
+          .then(r => r.json())
+          .then(showDetails)
+          .catch(err => {
+            console.error('Error fetching movie details:', err);
+            document.getElementById('movie-list').innerHTML = `<div class="error-state">Failed to load movie details. Please try again.</div>`;
+          });
       }
     })();
-
-    document.addEventListener('keydown', function(e) {
-      if (e.key === "/") {
-        e.preventDefault();
-        document.getElementById('movie-search-input').focus();
-      }
-      if (e.key === "Escape" && document.getElementById('modal').style.display === 'flex') {
-        closeModal();
-      }
-    });
   </script>
 </body>
 </html>
