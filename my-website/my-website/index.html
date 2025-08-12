@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MovieHouse</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=DM+Serif+Display&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.2/css/bootstrap.min.css">
@@ -12,19 +12,14 @@
       background: #15191e;
       color: #eee;
       font-family: 'Montserrat', Arial, sans-serif;
-      font-size: 1.2rem; /* Increased base font size for TV readability */
     }
     .container-fluid, .tm-container-content {
       background: #15191e !important;
-      padding: 2% 5%; /* Added padding for overscan */
     }
     .navbar, .navbar-nav, .nav-link, .tm-text-primary, .tm-footer, .modal-content, .modal, .tm-search-form, .movie-metadata, .modal-body, .modal-text, .footer, .pagination, .page-link, .chip {
       background: #15191e !important;
       color: #eee !important;
       border-color: #222 !important;
-    }
-    .navbar {
-      padding: 1rem 5%; /* Added padding for overscan */
     }
     .tm-hero {
       background: #1a1f25;
@@ -70,36 +65,6 @@
       .navbar-toggler i {
         font-size: 1.5rem;
         color: #eee;
-      }
-    }
-    @media (min-width: 1920px) {
-      .movie-col {
-        width: 20%; /* Adjusted for better spacing on TVs */
-        flex: 0 0 20%;
-        max-width: 20%;
-      }
-      .navbar-brand .logo-text {
-        font-size: 3.5rem; /* Larger for TV readability */
-      }
-      .nav-link {
-        font-size: 1.4rem; /* Larger for TV readability */
-      }
-      .movie-poster-img {
-        border-radius: 8px;
-      }
-      .play-btn-centered {
-        width: 60px; /* Larger button for TV remotes */
-        height: 60px;
-        font-size: 2em;
-      }
-      .modal-body {
-        font-size: 1.2em; /* Larger text for modal content */
-      }
-      #recently-viewed-list .movie-col {
-        width: 150px !important;
-        min-width: 150px;
-        max-width: 150px;
-        flex: 0 0 150px !important;
       }
     }
     .movie-poster-wrapper, .movie-col {
@@ -205,12 +170,12 @@
     .modal-content {
       background: #23272e !important;
       color: #eee !important;
-      max-height: 90vh; /* Adjusted for overscan */
+      max-height: 95vh;
       overflow-y: auto;
       border-radius: 8px;
-      max-width: 90vw; /* Increased for TV screens */
+      max-width: 800px;
       width: 98vw;
-      margin: 5vh auto; /* Centered with safe area */
+      margin: 2vw;
       position: relative;
       display: flex;
       flex-direction: column;
@@ -279,12 +244,11 @@
       overflow-y: auto;
     }
     #modal-video, #tv-episode-player {
-      width: 100%; /* Adjusted for TV screens */
-      max-width: 90vw; /* Prevent overflow */
+      width: 98%;
       aspect-ratio: 16/9;
-      min-height: 200px; /* Increased for visibility */
-      max-height: 70vh; /* Increased for TVs */
-      margin: 1rem auto;
+      min-height: 180px;
+      max-height: 46vh;
+      margin: 1rem auto 0;
       display: block;
       border-radius: 6px;
       background: #111;
@@ -306,16 +270,6 @@
         max-height: none;
         margin: 0;
         border-radius: 0;
-      }
-    }
-    @media (min-width: 1280px) {
-      #modal-video:fullscreen, #tv-episode-player:fullscreen {
-        width: 100vw;
-        height: 100vh;
-        max-height: none;
-        margin: 0;
-        border-radius: 0;
-        object-fit: contain; /* Ensure video fits without cropping */
       }
     }
     .modal-body {
@@ -617,10 +571,7 @@
       <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <ul class="navbar-nav ml-auto mb-2 mb-lg-0" id="movie-nav">
           <li class="nav-item">
-            <a class="nav-link nav-link-1 active" id="nav-home" href="#" aria-label="Home"><i class="fas fa-home"></i> Home</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" id="nav-movies" href="#" aria-label="Trending Movies">Trending Movies</a>
+            <a class="nav-link nav-link-1 active" id="nav-movies" href="#" aria-label="Trending Movies">Trending Movies</a>
           </li>
           <li class="nav-item">
             <a class="nav-link" id="nav-tvshows" href="#" aria-label="Trending TV Shows">Trending TV Shows</a>
@@ -710,7 +661,7 @@
   <script>
     // --- CONFIG ---
     const apiKey = '40f1982842db35042e8561b13b38d492';
-    const imageBaseUrl = 'https://image.tmdb.org/t/p/w780'; // Updated to w780 for better TV resolution
+    const imageBaseUrl = 'https://image.tmdb.org/t/p/w500';
     const maxPages = 100;
     const maxItems = 500;
     let lastModalMovie = null;
@@ -1395,7 +1346,6 @@
       }
     }
     function setActiveNav(mode) {
-      document.getElementById('nav-home').classList.remove('active');
       document.getElementById('nav-movies').classList.remove('active');
       document.getElementById('nav-tvshows').classList.remove('active');
       document.getElementById('nav-anime').classList.remove('active');
@@ -1412,7 +1362,6 @@
       } else if (mode === "favorites") {
         // handled separately for heart color
       } else {
-        document.getElementById('nav-home').classList.add('active');
         document.getElementById('nav-movies').classList.add('active');
       }
     }
@@ -1437,12 +1386,6 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
       });
 
-      document.getElementById('nav-home').onclick = function(e) {
-        e.preventDefault();
-        switchMode('popular');
-        document.getElementById('movie-search-input').value = '';
-        document.getElementById('genre-filter').value = '';
-      };
       document.getElementById('nav-movies').onclick = function(e) { e.preventDefault(); switchMode('popular'); };
       document.getElementById('nav-tvshows').onclick = function(e) { e.preventDefault(); switchMode('tv'); };
       document.getElementById('nav-anime').onclick = function(e) { e.preventDefault(); switchMode('anime'); };
@@ -1565,20 +1508,22 @@
         setTimeout(() => { btn.textContent = "Share"; }, 1200);
       }
     }
-
-    // Handle URL
     (function() {
       const params = new URLSearchParams(location.search);
       if (params.has("mid")) {
-        fetch(`https://api.themoviedb.org/3/movie/${params.get("mid")}?api_key=${apiKey}`)
-          .then(r => r.json())
-          .then(showDetails)
-          .catch(err => {
-            console.error('Error fetching movie details:', err);
-            document.getElementById('movie-list').innerHTML = `<div class="error-state">Failed to load movie details. Please try again.</div>`;
-          });
+        fetch(`https://api.themoviedb.org/3/movie/${params.get("mid")}?api_key=${apiKey}`).then(r => r.json()).then(showDetails);
       }
     })();
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === "/") {
+        e.preventDefault();
+        document.getElementById('movie-search-input').focus();
+      }
+      if (e.key === "Escape" && document.getElementById('modal').style.display === 'flex') {
+        closeModal();
+      }
+    });
   </script>
 </body>
 </html>
