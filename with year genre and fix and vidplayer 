@@ -648,16 +648,9 @@
         <div class="col-lg-3 col-md-6 col-sm-6 col-12 px-5 mb-5">
           <h3 class="tm-text-primary mb-4 tm-footer-title">Quick Links</h3>
           <ul class="tm-footer-links pl-0">
-            <li><a href="#">About</a></li>
-            <li><a href="#">Contact</a></li>
-            <li><a href="#">Privacy Policy</a></li>
-          </ul>
-        </div>
-        <div class="col-lg-3 col-md-6 col-sm-6 col-12 px-5 mb-5">
-          <ul class="tm-social-links d-flex justify-content-end pl-0 mb-5">
-            <li class="mb-2"><a href="https://facebook.com"><i class="fab fa-facebook"></i></a></li>
-            <li class="mb-2"><a href="https://twitter.com"><i class="fab fa-twitter"></i></a></li>
-            <li class="mb-2"><a href="https://instagram.com"><i class="fab fa-instagram"></i></a></li>
+            <li><a href="https://www.facebook.com/share/161RUAjhMw/" target="_blank" rel="noopener">About</a></li>
+            <li><a href="https://www.facebook.com/share/161RUAjhMw/" target="_blank" rel="noopener">Contact</a></li>
+            <li><a href="mailto:norwilaxie@gmail.com">Email</a></li>
           </ul>
         </div>
       </div>
@@ -1532,25 +1525,47 @@
         document.getElementById('year-filter').value = "";
         currentGenre = "";
         currentYear = "";
+        console.log('[clear-genre-btn] Cleared genre and year filters');
         if (currentMode === "favorites") {
           renderFavorites();
+          document.getElementById('clear-genre-btn').focus();
         } else {
           resetInfiniteScroll();
+          document.getElementById('clear-genre-btn').focus();
         }
-        genreFilter.focus();
+        genreFilter.setAttribute('aria-activedescendant', genreFilter.options[genreFilter.selectedIndex].id || '');
+        document.getElementById('year-filter').setAttribute('aria-activedescendant', document.getElementById('year-filter').options[document.getElementById('year-filter').selectedIndex].id || '');
       };
 
-      // Infinite scroll handler
-      window.addEventListener('scroll', () => {
-        if (currentMode === 'favorites') return;
-        if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100 && !isLoading && !reachedEnd) {
+      // Infinite scroll event listener
+      window.addEventListener('scroll', throttle(() => {
+        if (currentMode === "favorites") return;
+        const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+        if (scrollHeight - scrollTop - clientHeight < 400 && !isLoading && !reachedEnd) {
           console.log('[scroll] Triggering loadMoreMovies');
           loadMoreMovies();
         }
-      });
+      }, 300));
 
+      // Initial load
+      console.log('[DOMContentLoaded] Initializing with popular mode');
+      switchMode('popular');
       renderRecentlyViewed();
-      resetInfiniteScroll();
+    });
+
+    // Close modal on outside click
+    window.onclick = function(event) {
+      const modal = document.getElementById('modal');
+      if (event.target === modal) {
+        closeModal();
+      }
+    };
+
+    // Keyboard accessibility for modal close
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') {
+        closeModal();
+      }
     });
   </script>
 </body>
