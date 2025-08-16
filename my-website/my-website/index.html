@@ -1552,7 +1552,7 @@
         if (currentMode === "favorites") {
           const filteredItems = categoryItems.filter(item =>
             (!currentGenre || item.genre_ids?.includes(parseInt(currentGenre)) || item.genres?.some(g => g.id === parseInt(currentGenre))) &&
-            (!currentYear || (item.media_type === 'tv' ? (item.first_air_date || '').slice(0, 4) : (item.release_date || '').slice(0, 4)) === currentYear)
+            (!currentYear || (item.media_type === 'tv' ? (item.first_air_date || '').slice(04) : (item.release_date || '').slice(0, 4)) === currentYear)
           );
           renderMovies(filteredItems, true);
           genreFilter.focus();
