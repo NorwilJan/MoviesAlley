@@ -4,17 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MovieHouse</title>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@900&-
-
-System: The provided HTML code has been modified to set `vidsrc.cc` as the default player server in the server selector dropdown and the relevant JavaScript functions. Below is the complete updated code with the default server changed from `player.videasy.net` to `vidsrc.cc` in the `<select>` element and the `changeServer` and `playEpisode` functions. All other parts of the code remain unchanged.
-
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MovieHouse</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=DM+Serif+Display&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.2/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -536,8 +525,8 @@ System: The provided HTML code has been modified to set `vidsrc.cc` as the defau
       <div class="server-selector">
         <label for="server">Change Server:</label>
         <select id="server" onchange="changeServer()">
-          <option value="vidsrc.cc" selected>Vidsrc.cc</option>
-          <option value="player.videasy.net">Player.Videasy.net</option>
+          <option value="player.videasy.net" selected>Player.Videasy.net</option>
+          <option value="vidsrc.cc">Vidsrc.cc</option>
           <option value="vidsrc.me">Vidsrc.me</option>
         </select>
       </div>
@@ -627,7 +616,8 @@ System: The provided HTML code has been modified to set `vidsrc.cc` as the defau
       <div id="recently-viewed-list"></div>
     </div>
     <div class="row mb-4">
-      <h2 class="col-6 tm-text-primary" id="section-title">Trending Movies</ promu>      <div class="col-6 d-flex justify-content-end align-items-center"></div>
+      <h2 class="col-6 tm-text-primary" id="section-title">Trending Movies</h2>
+      <div class="col-6 d-flex justify-content-end align-items-center"></div>
     </div>
     <div class="row mb-4">
       <form class="genre-filter-form" id="genre-filter-form">
@@ -1098,7 +1088,7 @@ System: The provided HTML code has been modified to set `vidsrc.cc` as the defau
           if (yt)
             document.getElementById('modal-trailer').innerHTML = `<a href="https://youtube.com/watch?v=${yt.key}" target="_blank" rel="noopener">▶ Watch Official Trailer</a>`;
         });
-      document.getElementById('server').value = "vidsrc.cc";
+      document.getElementById('server').value = "player.videasy.net";
       changeServer();
       fetch(`https://api.themoviedb.org/3/movie/${movie.id}/similar?api_key=${apiKey}`)
         .then(r => r.json()).then(data => {
@@ -1132,10 +1122,10 @@ System: The provided HTML code has been modified to set `vidsrc.cc` as the defau
       const movieId = lastModalMovie.id;
       let embedURL = '';
 
-      if (currentServer === 'vidsrc.cc') {
-        embedURL = `https://vidsrc.cc/v2/embed/movie/${movieId}`;
-      } else if (currentServer === 'player.videasy.net') {
+      if (currentServer === 'player.videasy.net') {
         embedURL = `https://player.videasy.net/movie/${movieId}`;
+      } else if (currentServer === 'vidsrc.cc') {
+        embedURL = `https://vidsrc.cc/v2/embed/movie/${movieId}`;
       } else if (currentServer === 'vidsrc.me') {
         embedURL = `https://vidsrc.net/embed/movie/?tmdb=${movieId}`;
       }
@@ -1251,10 +1241,10 @@ System: The provided HTML code has been modified to set `vidsrc.cc` as the defau
       const playOverlay = iframe.parentElement.querySelector('.iframe-play-overlay');
       const server = document.getElementById('server').value;
       let embedURL = '';
-      if (server === 'vidsrc.cc') {
-        embedURL = `https://vidsrc.cc/v2/embed/tv/${showId}/${season}/${episode}`;
-      } else if (server === 'player.videasy.net') {
+      if (server === 'player.videasy.net') {
         embedURL = `https://player.videasy.net/tv/${showId}/${season}/${episode}`;
+      } else if (server === 'vidsrc.cc') {
+        embedURL = `https://vidsrc.cc/v2/embed/tv/${showId}/${season}/${episode}`;
       } else if (server === 'vidsrc.me') {
         embedURL = `https://vidsrc.net/embed/tv/?tmdb=${showId}&season=${season}&episode=${episode}`;
       }
@@ -1394,8 +1384,6 @@ System: The provided HTML code has been modified to set `vidsrc.cc` as the defau
       resetInfiniteScroll();
     }
 
-
-
     // DOMContentLoaded event listener
     document.addEventListener("DOMContentLoaded", function () {
       const movieIframe = document.getElementById('modal-video');
@@ -1407,7 +1395,7 @@ System: The provided HTML code has been modified to set `vidsrc.cc` as the defau
       populateYearFilter();
 
       const backToTopBtn = document.getElementById('back-to-top');
-      window.addEventperfEventListener('scroll', () => {
+      window.addEventListener('scroll', () => {
         if (window.scrollY > 400) {
           backToTopBtn.classList.add('visible');
         } else {
@@ -1532,23 +1520,28 @@ System: The provided HTML code has been modified to set `vidsrc.cc` as the defau
         document.getElementById('year-filter').setAttribute('aria-activedescendant', document.getElementById('year-filter').options[document.getElementById('year-filter').selectedIndex].id || '');
       };
       document.getElementById('clear-genre-btn').onclick = function () {
-        console.log('[clear-genre-btn] Clicked, clearing filters');
-        currentGenre = '';
-        currentYear = '';
-        genreFilter.value = '';
-        document.getElementById('year-filter').value = '';
-        genreFilter.setAttribute('aria-activedescendant', 'genre-all');
-        document.getElementById('year-filter').setAttribute('aria-activedescendant', 'year-all');
-        if (currentMode === 'favorites') {
-          renderMovies(categoryItems, true);
+        console.log('[clear-genre-btn] Clearing filters');
+        genreFilter.value = "";
+        document.getElementById('year-filter').value = "";
+        currentGenre = "";
+        currentYear = "";
+        console.log('[clear-genre-btn] Cleared genre and year filters');
+        if (currentMode === "favorites") {
+          renderFavorites();
+          document.getElementById('clear-genre-btn').focus();
         } else {
           resetInfiniteScroll();
+          document.getElementById('clear-genre-btn').focus();
         }
+        genreFilter.setAttribute('aria-activedescendant', genreFilter.options[genreFilter.selectedIndex].id || '');
+        document.getElementById('year-filter').setAttribute('aria-activedescendant', document.getElementById('year-filter').options[document.getElementById('year-filter').selectedIndex].id || '');
       };
 
       // Infinite scroll event listener
       window.addEventListener('scroll', throttle(() => {
-        if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 300 && !isLoading && !reachedEnd) {
+        if (currentMode === "favorites") return;
+        const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+        if (scrollHeight - scrollTop - clientHeight < 400 && !isLoading && !reachedEnd) {
           console.log('[scroll] Triggering loadMoreMovies');
           loadMoreMovies();
         }
@@ -1558,22 +1551,21 @@ System: The provided HTML code has been modified to set `vidsrc.cc` as the defau
       console.log('[DOMContentLoaded] Initializing with popular mode');
       switchMode('popular');
       renderRecentlyViewed();
+    });
 
-      // Modal close on click outside
-      document.getElementById('modal').addEventListener('click', function (e) {
-        if (e.target === this) {
-          console.log('[modal] Clicked outside, closing modal');
-          closeModal();
-        }
-      });
+    // Close modal on outside click
+    window.onclick = function(event) {
+      const modal = document.getElementById('modal');
+      if (event.target === modal) {
+        closeModal();
+      }
+    };
 
-      // Keyboard accessibility for modal close
-      document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && document.getElementById('modal').style.display === 'flex') {
-          console.log('[keydown] Escape pressed, closing modal');
-          closeModal();
-        }
-      });
+    // Keyboard accessibility for modal close
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') {
+        closeModal();
+      }
     });
   </script>
 </body>
