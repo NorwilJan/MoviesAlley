@@ -220,6 +220,12 @@
       flex-direction: column;
       align-items: center;
       position: relative;
+      opacity: 0;
+      animation: fadeIn 0.3s ease-in forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
     @media (min-width: 1200px) {
       .movie-col { width: 16.6666%; flex: 0 0 16.6666%; max-width: 16.6666%; }
@@ -698,6 +704,15 @@
     const infiniteLoader = document.getElementById('infinite-loader');
     const genreFilter = document.getElementById('genre-filter');
 
+    // Debounce function for scroll handling
+    function debounce(func, wait) {
+      let timeout;
+      return function (...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+      };
+    }
+
     // Throttle function
     function throttle(func, limit) {
       let inThrottle;
@@ -901,7 +916,7 @@
         div.className = "movie-col";
         div.innerHTML = `
           <div class="movie-poster-wrapper" tabindex="0">
-            <img src="${item.poster_path ? imageBaseUrl + item.poster_path : 'img/no-poster.png'}" alt="${item.title}" class="img-fluid movie-poster-img">
+            <img src="${item.poster_path ? imageBaseUrl + item.poster_path : 'img/no-poster.png'}" alt="${item.title}" class="img-fluid movie-poster-img" loading="lazy">
           </div>
           <div class="movie-metadata">
             <span class="movie-title" title="${item.title}">${item.title}</span>
@@ -973,6 +988,7 @@
         document.getElementById('year-filter').disabled = false;
       }
     }
+
     function renderMovies(items, clear = false) {
       console.log(`[renderMovies] Rendering ${items.length} items, clear=${clear}`);
       if (clear) movieList.innerHTML = '';
@@ -988,7 +1004,7 @@
         movieDiv.className = 'movie-col';
         movieDiv.innerHTML = `
           <div class="movie-poster-wrapper" tabindex="0">
-            <img src="${item.poster_path ? imageBaseUrl + item.poster_path : 'img/no-poster.png'}" alt="${isTv ? item.name : item.title}" class="img-fluid movie-poster-img">
+            <img src="${item.poster_path ? imageBaseUrl + item.poster_path : 'img/no-poster.png'}" alt="${isTv ? item.name : item.title}" class="img-fluid movie-poster-img" loading="lazy">
             <button class="play-btn-centered" type="button" title="${isTv ? "View TV Show" : "Play Movie"}">
               <i class="fas fa-${isTv ? "tv" : "play"}"></i>
             </button>
@@ -1012,7 +1028,8 @@
       movieList.appendChild(fragment);
     }
 
-    // Infinite scroll
+    // Infinite scroll improvements
+    let pendingPages = [];
     async function loadMoreMovies(clear = false) {
       if (isLoading || reachedEnd || currentPage > maxPages) {
         console.log(`[loadMoreMovies] Skipped: isLoading=${isLoading}, reachedEnd=${reachedEnd}, currentPage=${currentPage}, maxPages=${maxPages}`);
@@ -1023,24 +1040,64 @@
       if (clear) {
         movieList.innerHTML = '<div class="loading-state">Loading...</div>';
         categoryItems = [];
+        pendingPages = [];
+        loadedPages.clear();
       }
       infiniteLoader.style.display = "block";
-      const items = await fetchMoviesInf(currentPage);
-      if (items.length > 0) {
-        if (clear) categoryItems = items;
-        else categoryItems = [...categoryItems, ...items].slice(0, maxItems);
-        renderMovies(items, clear);
-        currentPage++;
-        if (currentPage > totalPages) reachedEnd = true;
-        console.log(`[loadMoreMovies] Rendered ${items.length} items, currentPage=${currentPage}, totalPages=${totalPages}`);
-      } else {
-        reachedEnd = true;
-        if (clear && !categoryItems.length) {
-          movieList.innerHTML = `<div class="empty-state">No items found for this ${currentGenre ? 'genre' : currentYear ? 'year' : 'category'}.</div>`;
+
+      // Add current page to pendingPages
+      pendingPages.push(currentPage);
+      const pagesToFetch = [...new Set(pendingPages)]; // Deduplicate pages
+      pendingPages = []; // Clear pending pages after capturing
+
+      try {
+        // Fetch all pending pages in parallel
+        const fetchPromises = pagesToFetch.map(page => fetchMoviesInf(page));
+        const results = await Promise.all(fetchPromises);
+
+        // Flatten and filter valid results
+        let newItems = results.flat().filter(item => item && item.id);
+        if (newItems.length > 0) {
+          if (clear) {
+            categoryItems = newItems;
+          } else {
+            categoryItems = [...categoryItems, ...newItems].slice(0, maxItems);
+          }
+          renderMovies(newItems, clear);
+          pagesToFetch.forEach(page => loadedPages.add(page));
+          currentPage = Math.max(...pagesToFetch) + 1;
+          if (currentPage > totalPages || categoryItems.length >= maxItems) {
+            reachedEnd = true;
+          }
+          console.log(`[loadMoreMovies] Rendered ${newItems.length} items, currentPage=${currentPage}, totalPages=${totalPages}`);
+        } else {
+          reachedEnd = true;
+          if (clear && !categoryItems.length) {
+            movieList.innerHTML = `<div class="empty-state">No items found for this ${currentGenre ? 'genre' : currentYear ? 'year' : 'category'}.</div>`;
+          }
         }
+      } catch (e) {
+        console.error('[loadMoreMovies] Error:', e);
+        movieList.innerHTML = `<div class="error-state">Failed to load content. Please try again.</div>`;
+      } finally {
+        isLoading = false;
+        infiniteLoader.style.display = "none";
       }
-      isLoading = false;
-      infiniteLoader.style.display = "none";
+    }
+
+    // Intersection Observer for infinite scroll
+    function setupIntersectionObserver() {
+      const observer = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && !isLoading && !reachedEnd && currentMode !== "favorites") {
+          console.log('[IntersectionObserver] Triggering loadMoreMovies');
+          loadMoreMovies();
+        }
+      }, {
+        root: null,
+        rootMargin: '400px',
+        threshold: 0.1
+      });
+      observer.observe(infiniteLoader);
     }
 
     // Reset infinite scroll
@@ -1052,6 +1109,7 @@
       reachedEnd = false;
       categoryItems = [];
       isLoading = false;
+      pendingPages = [];
       movieList.innerHTML = '<div class="loading-state">Loading...</div>';
       infiniteLoader.style.display = 'block';
       loadMoreMovies(true);
@@ -1393,6 +1451,7 @@
 
       fetchGenres();
       populateYearFilter();
+      setupIntersectionObserver();
 
       const backToTopBtn = document.getElementById('back-to-top');
       window.addEventListener('scroll', () => {
@@ -1536,16 +1595,6 @@
         genreFilter.setAttribute('aria-activedescendant', genreFilter.options[genreFilter.selectedIndex].id || '');
         document.getElementById('year-filter').setAttribute('aria-activedescendant', document.getElementById('year-filter').options[document.getElementById('year-filter').selectedIndex].id || '');
       };
-
-      // Infinite scroll event listener
-      window.addEventListener('scroll', throttle(() => {
-        if (currentMode === "favorites") return;
-        const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
-        if (scrollHeight - scrollTop - clientHeight < 400 && !isLoading && !reachedEnd) {
-          console.log('[scroll] Triggering loadMoreMovies');
-          loadMoreMovies();
-        }
-      }, 300));
 
       // Initial load
       console.log('[DOMContentLoaded] Initializing with popular mode');
