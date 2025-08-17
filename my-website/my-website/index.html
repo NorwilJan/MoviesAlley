@@ -228,7 +228,7 @@
       .movie-col { width: 25%; flex: 0 0 25%; max-width: 25%; }
     }
     @media (max-width: 767.98px) {
-      .movie-col { width: 33.3333%; flex: 0 0 33.3333%; max-width: 33.3333%; }
+      .movie-col { width: 50%; flex: 0 0 50%; max-width: 50%; }
     }
     .modal {
       display: none;
@@ -472,8 +472,8 @@
     }
     #back-to-top {
       position: fixed;
-      bottom: 20px;
-      right: 20px;
+      bottom: 30px;
+      right: 30px;
       background: #1976d2;
       color: #fff;
       border: none;
@@ -484,7 +484,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 1000;
+      z-index: 100;
       opacity: 0;
       visibility: hidden;
       cursor: pointer;
@@ -502,26 +502,31 @@
     .bmc-button {
       height: 40px !important;
       width: 145px !important;
-      background: #1a1f25 !important;
-      border: 1px solid #222 !important;
-      border-radius: 4px;
-      transition: transform 0.2s, opacity 0.2s, filter 0.2s;
+      transition: transform 0.2s, opacity 0.2s;
       display: inline-block;
       filter: brightness(1);
+      /* Optional: Uncomment to match site’s blue theme */
+      /* filter: hue-rotate(200deg) brightness(0.9); */
     }
     .bmc-button:hover,
     .bmc-button:focus {
       filter: brightness(1.1);
       transform: scale(1.05);
-      outline: none;
+    }
+    @media (max-width: 767.98px) {
+      .bmc-button {
+        height: 36px !important;
+        width: 130px !important;
+      }
     }
     #bmc-hover-btn {
       position: fixed;
-      bottom: 80px;
-      right: 20px;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%);
       background: transparent;
       border: none;
-      z-index: 1000;
+      z-index: 100;
       opacity: 0;
       visibility: hidden;
       cursor: pointer;
@@ -532,24 +537,14 @@
       visibility: visible;
     }
     #bmc-hover-btn:hover, #bmc-hover-btn:focus {
-      transform: scale(1.05);
+      transform: translateX(-50%) scale(1.05);
     }
-    @media (min-width: 768px) and (max-width: 991.98px) {
-      #bmc-hover-btn {
-        bottom: 70px;
-        right: 15px;
-      }
-      .bmc-button {
-        height: 38px !important;
-        width: 140px !important;
-      }
+    #bmc-hover-btn .bmc-button {
+      height: 40px !important;
+      width: 145px !important;
     }
     @media (max-width: 767.98px) {
-      #bmc-hover-btn {
-        bottom: 60px;
-        right: 10px;
-      }
-      .bmc-button {
+      #bmc-hover-btn .bmc-button {
         height: 36px !important;
         width: 130px !important;
       }
@@ -1515,67 +1510,84 @@
         console.log('[nav-favorites] Clicked');
         switchModeDebounced('favorites');
       };
-      document.getdocument.getElementById('nav-netflix').onclick = function (e) {
+      document.getElementById('nav-netflix').onclick = function (e) {
         e.preventDefault();
         console.log('[nav-netflix] Clicked');
+        let nav = document.getElementById('nav-netflix').parentNode;
+        if (!document.getElementById("netflix-switcher")) {
+          let switcher = document.createElement("div");
+          switcher.id = "netflix-switcher";
+          switcher.style = "margin-top: 6px; margin-bottom: 2px;";
+          switcher.innerHTML = `<button id="netflix-movie-btn" class="btn btn-danger btn-sm" style="margin-right: 7px;">Movies</button>
+            <button id="netflix-tv-btn" class="btn btn-danger btn-sm">TV Shows</button>`;
+          nav.appendChild(switcher);
+          document.getElementById("netflix-movie-btn").onclick = function (ev) {
+            ev.preventDefault();
+            console.log('[netflix-movie-btn] Click');
+        netflixType = "movie";
         switchModeDebounced('netflix');
       };
+      document.getElementById("netflix-tv-btn").onclick = function (ev) {
+        ev.preventDefault();
+        console.log('[netflix-tv-btn] Click');
+        netflixType = "tv";
+        switchModeDebounced('netflix');
+      };
+    } else {
+      switchModeDebounced('netflix');
+    }
+  };
 
-      // Handle search form submission
-      document.getElementById('movie-search-form').addEventListener('submit', function (e) {
-        e.preventDefault();
-        const query = document.getElementById('movie-search-input').value.trim();
-        if (!query) return;
-        currentQuery = query;
-        currentMode = 'search';
-        setActiveNav('search');
-        document.getElementById('section-title').textContent = `Search Results for "${query}"`;
-        document.getElementById('genre-filter-form').style.display = 'flex';
-        populateGenreFilter();
-        resetInfiniteScroll();
-      });
+  // Search form submission
+  document.getElementById('movie-search-form').onsubmit = function (e) {
+    e.preventDefault();
+    const query = document.getElementById('movie-search-input').value.trim();
+    if (!query) return;
+    console.log('[movie-search-form] Search query:', query);
+    currentQuery = query;
+    switchModeDebounced('search');
+  };
 
-      // Handle genre and year filter changes
-      document.getElementById('genre-filter').addEventListener('change', function () {
-        currentGenre = this.value;
-        resetInfiniteScroll();
-      });
-      document.getElementById('year-filter').addEventListener('change', function () {
-        currentYear = this.value;
-        resetInfiniteScroll();
-      });
-      document.getElementById('clear-genre-btn').addEventListener('click', function () {
-        currentGenre = '';
-        currentYear = '';
-        document.getElementById('genre-filter').value = '';
-        document.getElementById('year-filter').value = '';
-        resetInfiniteScroll();
-      });
+  // Genre filter change
+  document.getElementById('genre-filter').onchange = function () {
+    currentGenre = this.value;
+    console.log('[genre-filter] Changed to genre:', currentGenre);
+    resetInfiniteScroll();
+  };
 
-      // Infinite scroll observer
-      const observer = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && !isLoading && !reachedEnd && currentMode !== 'favorites') {
-          loadMoreMovies();
-        }
-      }, { threshold: 0.1 });
-      observer.observe(infiniteLoader);
+  // Year filter change
+  document.getElementById('year-filter').onchange = function () {
+    currentYear = this.value;
+    console.log('[year-filter] Changed to year:', currentYear);
+    resetInfiniteScroll();
+  };
 
-      // Initialize
-      renderRecentlyViewed();
-      switchMode('popular');
+  // Clear genre/year filter
+  document.getElementById('clear-genre-btn').onclick = function () {
+    console.log('[clear-genre-btn] Clearing filters');
+    currentGenre = "";
+    currentYear = "";
+    document.getElementById('genre-filter').value = "";
+    document.getElementById('year-filter').value = "";
+    resetInfiniteScroll();
+  };
 
-      // Modal close on click outside
-      document.getElementById('modal').addEventListener('click', function (e) {
-        if (e.target === this) closeModal();
-      });
+  // Infinite scroll
+  const handleScroll = throttle(() => {
+    if (currentMode === 'favorites') return;
+    const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+    if (scrollTop + clientHeight >= scrollHeight - 300 && !isLoading && !reachedEnd) {
+      console.log('[handleScroll] Triggering loadMoreMovies');
+      loadMoreMovies();
+    }
+  }, 300);
+  window.addEventListener('scroll', handleScroll);
 
-      // Keyboard accessibility for modal close
-      document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && document.getElementById('modal').style.display === 'flex') {
-          closeModal();
-        }
-      });
-    });
+  // Initial load
+  console.log('[DOMContentLoaded] Initializing with mode:', currentMode);
+  renderRecentlyViewed();
+  switchMode(currentMode);
+});
   </script>
 </body>
-</html>
+</html>k
