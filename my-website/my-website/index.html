@@ -519,6 +519,36 @@
         width: 130px !important;
       }
     }
+    #bmc-hover-btn {
+      position: fixed;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: transparent;
+      border: none;
+      z-index: 100;
+      opacity: 0;
+      visibility: hidden;
+      cursor: pointer;
+      transition: opacity 0.3s, visibility 0.3s, transform 0.2s;
+    }
+    #bmc-hover-btn.visible {
+      opacity: 0.9;
+      visibility: visible;
+    }
+    #bmc-hover-btn:hover, #bmc-hover-btn:focus {
+      transform: translateX(-50%) scale(1.05);
+    }
+    #bmc-hover-btn .bmc-button {
+      height: 40px !important;
+      width: 145px !important;
+    }
+    @media (max-width: 767.98px) {
+      #bmc-hover-btn .bmc-button {
+        height: 36px !important;
+        width: 130px !important;
+      }
+    }
   </style>
   <script type="text/javascript" data-cfasync="false">
 /*<![CDATA[/* */
@@ -657,6 +687,9 @@
 
   <button id="back-to-top" title="Back to Top" aria-label="Back to Top">
     <i class="fas fa-arrow-up"></i>
+  </button>
+  <button id="bmc-hover-btn" title="Support us on Buy Me a Coffee" aria-label="Support us on Buy Me a Coffee">
+    <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee" class="bmc-button">
   </button>
 
   <footer class="tm-bg-gray pt-5 pb-3 tm-text-gray tm-footer">
@@ -1088,6 +1121,7 @@
       document.getElementById('modal-content-movie').style.display = '';
       document.getElementById('modal-content-tv').style.display = 'none';
       document.getElementById('modal').style.display = 'flex';
+      document.getElementById('bmc-hover-btn').classList.remove('visible'); // Hide BMC button
       lastModalMovie = movie;
       addRecentlyViewed(movie);
       document.getElementById('modal-title').textContent = movie.title;
@@ -1207,6 +1241,7 @@
       document.getElementById('modal-content-movie').style.display = 'none';
       document.getElementById('modal-content-tv').style.display = '';
       document.getElementById('modal').style.display = 'flex';
+      document.getElementById('bmc-hover-btn').classList.remove('visible'); // Hide BMC button
       tvModalData.tvId = show.id;
       tvModalData.season = null;
       tvModalData.episode = null;
@@ -1263,6 +1298,7 @@
     window.playEpisode = async function(showId, season, episode) {
       tvModalData.season = season;
       tvModalData.episode = episode;
+      document.getElementById('bmc-hover-btn').classList.remove('visible'); // Ensure BMC button is hidden
       const iframe = document.getElementById('tv-episode-player');
       const playOverlay = iframe.parentElement.querySelector('.iframe-play-overlay');
       const server = document.getElementById('server').value;
@@ -1343,6 +1379,10 @@
       });
       lastModalMovie = null;
       tvModalData = { tvId: null, season: null, episode: null, seasons: [] };
+      // Restore BMC button if scrolled past threshold
+      if (window.scrollY > 400) {
+        document.getElementById('bmc-hover-btn').classList.add('visible');
+      }
     }
 
     // Set active nav
@@ -1414,21 +1454,33 @@
     document.addEventListener("DOMContentLoaded", function () {
       const movieIframe = document.getElementById('modal-video');
       const tvIframe = document.getElementById('tv-episode-player');
+      const bmcHoverBtn = document.getElementById('bmc-hover-btn');
       handleFullscreenOrientation(movieIframe);
       handleFullscreenOrientation(tvIframe);
 
       fetchGenres();
       populateYearFilter();
 
-      const backToTopBtn = document.getElementById('back-to-top');
+      // Show/hide back-to-top and BMC buttons on scroll
       window.addEventListener('scroll', () => {
         if (window.scrollY > 400) {
-          backToTopBtn.classList.add('visible');
+          document.getElementById('back-to-top').classList.add('visible');
+          if (document.getElementById('modal').style.display !== 'flex') {
+            bmcHoverBtn.classList.add('visible');
+          }
         } else {
-          backToTopBtn.classList.remove('visible');
+          document.getElementById('back-to-top').classList.remove('visible');
+          bmcHoverBtn.classList.remove('visible');
         }
       });
-      backToTopBtn.addEventListener('click', () => {
+
+      // Link BMC button to Buy Me a Coffee URL
+      bmcHoverBtn.addEventListener('click', () => {
+        window.open('https://www.buymeacoffee.com/MovieDckWFPH', '_blank', 'noopener');
+        console.log('Buy Me a Coffee hover button clicked');
+      });
+
+      document.getElementById('back-to-top').addEventListener('click', () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       });
 
@@ -1471,126 +1523,71 @@
           nav.appendChild(switcher);
           document.getElementById("netflix-movie-btn").onclick = function (ev) {
             ev.preventDefault();
-            console.log('[netflix-movie-btn] Clicked');
-            netflixType = "movie";
-            switchModeDebounced("netflix");
-            nav.removeChild(switcher);
-          };
-          document.getElementById("netflix-tv-btn").onclick = function (ev) {
-            ev.preventDefault();
-            console.log('[netflix-tv-btn] Clicked');
-            netflixType = "tv";
-            switchModeDebounced("netflix");
-            nav.removeChild(switcher);
-          };
-        }
+            console.log('[netflix-movie-btn] Click');
+        netflixType = "movie";
+        switchModeDebounced('netflix');
       };
-
-      const form = document.getElementById('movie-search-form');
-      const input = document.getElementById('movie-search-input');
-      const sectionTitle = document.getElementById('section-title');
-      form.onsubmit = function (e) {
-        e.preventDefault();
-        const q = input.value.trim();
-        console.log(`[search] Submitted query: ${q}`);
-        if (q.length > 0) {
-          currentMode = "search";
-          currentQuery = q;
-          currentGenre = "";
-          currentYear = "";
-          sectionTitle.textContent = `Search Results for "${q}"`;
-          document.getElementById('genre-filter-form').style.display = 'none';
-          setActiveNav("");
-          resetInfiniteScroll();
-        } else {
-          switchModeDebounced('popular');
-        }
+      document.getElementById("netflix-tv-btn").onclick = function (ev) {
+        ev.preventDefault();
+        console.log('[netflix-tv-btn] Click');
+        netflixType = "tv";
+        switchModeDebounced('netflix');
       };
-      input.addEventListener('input', function () {
-        if (currentMode === "search" && this.value.trim().length === 0) {
-          console.log('[search-input] Cleared, switching to popular');
-          switchModeDebounced('popular');
-          document.getElementById('genre-filter-form').style.display = 'flex';
-        }
-      });
-      genreFilter.onchange = function () {
-        currentGenre = genreFilter.value;
-        console.log(`[genre-filter] Changed to genre: ${currentGenre}`);
-        if (currentMode === "favorites") {
-          const filteredItems = categoryItems.filter(item =>
-            (!currentGenre || item.genre_ids?.includes(parseInt(currentGenre)) || item.genres?.some(g => g.id === parseInt(currentGenre))) &&
-            (!currentYear || (item.media_type === 'tv' ? (item.first_air_date || '').slice(0, 4) : (item.release_date || '').slice(0, 4)) === currentYear)
-          );
-          renderMovies(filteredItems, true);
-          genreFilter.focus();
-        } else {
-          resetInfiniteScroll();
-          genreFilter.focus();
-        }
-        genreFilter.setAttribute('aria-activedescendant', genreFilter.options[genreFilter.selectedIndex].id || '');
-      };
-      document.getElementById('year-filter').onchange = function () {
-        currentYear = document.getElementById('year-filter').value;
-        console.log(`[year-filter] Changed to year: ${currentYear}`);
-        if (currentMode === "favorites") {
-          const filteredItems = categoryItems.filter(item =>
-            (!currentGenre || item.genre_ids?.includes(parseInt(currentGenre)) || item.genres?.some(g => g.id === parseInt(currentGenre))) &&
-            (!currentYear || (item.media_type === 'tv' ? (item.first_air_date || '').slice(0, 4) : (item.release_date || '').slice(0, 4)) === currentYear)
-          );
-          renderMovies(filteredItems, true);
-          document.getElementById('year-filter').focus();
-        } else {
-          resetInfiniteScroll();
-          document.getElementById('year-filter').focus();
-        }
-        document.getElementById('year-filter').setAttribute('aria-activedescendant', document.getElementById('year-filter').options[document.getElementById('year-filter').selectedIndex].id || '');
-      };
-      document.getElementById('clear-genre-btn').onclick = function () {
-        console.log('[clear-genre-btn] Clearing filters');
-        currentGenre = "";
-        currentYear = "";
-        genreFilter.value = "";
-        document.getElementById('year-filter').value = "";
-        genreFilter.setAttribute('aria-activedescendant', genreFilter.options[genreFilter.selectedIndex].id || '');
-        document.getElementById('year-filter').setAttribute('aria-activedescendant', document.getElementById('year-filter').options[document.getElementById('year-filter').selectedIndex].id || '');
-        if (currentMode === "favorites") {
-          renderMovies(categoryItems, true);
-        } else {
-          resetInfiniteScroll();
-        }
-      };
+    } else {
+      switchModeDebounced('netflix');
+    }
+  };
 
-      // Infinite scroll event
-      const handleScroll = throttle(() => {
-        console.log('[handleScroll] Checking scroll position');
-        if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 200 && !isLoading && !reachedEnd) {
-          console.log('[handleScroll] Triggering loadMoreMovies');
-          loadMoreMovies();
-        }
-      }, 300);
-      window.addEventListener('scroll', handleScroll);
+  // Search form submission
+  document.getElementById('movie-search-form').onsubmit = function (e) {
+    e.preventDefault();
+    const query = document.getElementById('movie-search-input').value.trim();
+    if (!query) return;
+    console.log('[movie-search-form] Search query:', query);
+    currentQuery = query;
+    switchModeDebounced('search');
+  };
 
-      // Initial load
-      console.log('[DOMContentLoaded] Initializing');
-      renderRecentlyViewed();
-      switchMode('popular');
+  // Genre filter change
+  document.getElementById('genre-filter').onchange = function () {
+    currentGenre = this.value;
+    console.log('[genre-filter] Changed to genre:', currentGenre);
+    resetInfiniteScroll();
+  };
 
-      // Keyboard navigation
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-          console.log('[keydown] Escape pressed, closing modal');
-          closeModal();
-        }
-      });
+  // Year filter change
+  document.getElementById('year-filter').onchange = function () {
+    currentYear = this.value;
+    console.log('[year-filter] Changed to year:', currentYear);
+    resetInfiniteScroll();
+  };
 
-      // Track Buy Me a Coffee button clicks
-      document.querySelectorAll('a[href*="buymeacoffee"]').forEach(link => {
-        link.addEventListener('click', () => {
-          console.log('Buy Me a Coffee button clicked');
-          // Add analytics code here if needed (e.g., Google Analytics event)
-        });
-      });
-    });
+  // Clear genre/year filter
+  document.getElementById('clear-genre-btn').onclick = function () {
+    console.log('[clear-genre-btn] Clearing filters');
+    currentGenre = "";
+    currentYear = "";
+    document.getElementById('genre-filter').value = "";
+    document.getElementById('year-filter').value = "";
+    resetInfiniteScroll();
+  };
+
+  // Infinite scroll
+  const handleScroll = throttle(() => {
+    if (currentMode === 'favorites') return;
+    const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+    if (scrollTop + clientHeight >= scrollHeight - 300 && !isLoading && !reachedEnd) {
+      console.log('[handleScroll] Triggering loadMoreMovies');
+      loadMoreMovies();
+    }
+  }, 300);
+  window.addEventListener('scroll', handleScroll);
+
+  // Initial load
+  console.log('[DOMContentLoaded] Initializing with mode:', currentMode);
+  renderRecentlyViewed();
+  switchMode(currentMode);
+});
   </script>
 </body>
-</html>
+</html>k
