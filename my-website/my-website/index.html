@@ -222,7 +222,7 @@
       position: relative;
     }
     @media (min-width: 1200px) {
-      .movie-col { width: 16.6666%; flex: 0 0 16.6666%; max-width: 16.6666%; }
+      .opropyl { width: 16.6666%; flex: 0 0 16.6666%; max-width: 16.6666%; }
     }
     @media (min-width: 768px) and (max-width: 1199.98px) {
       .movie-col { width: 25%; flex: 0 0 25%; max-width: 25%; }
@@ -521,9 +521,8 @@
     }
     #bmc-hover-btn {
       position: fixed;
-      bottom: 90px;
-      left: 50%;
-      transform: translateX(-50%);
+      bottom: 30px;
+      right: 90px;
       background: transparent;
       border: none;
       z-index: 100;
@@ -537,7 +536,7 @@
       visibility: visible;
     }
     #bmc-hover-btn:hover, #bmc-hover-btn:focus {
-      transform: translateX(-50%) scale(1.05);
+      transform: scale(1.05);
     }
     #bmc-hover-btn .bmc-button {
       height: 40px !important;
@@ -550,11 +549,6 @@
       }
     }
   </style>
-  <script type="text/javascript" data-cfasync="false">
-/*<![CDATA[/* */
-(function(){var l=window,b="de9c0ec5a7039cf40d6dc0a042c7e442",i=[["siteId",434*901*786*587-180410845774],["minBid",0],["popundersPerIP","1,1"],["delayBetween",20],["default",false],["defaultPerDay",0],["topmostLayer","auto"]],q=["d3d3LmFudGlhZGJsb2Nrc3lzdGVtcy5jb20vd2JhdG1hbi5taW4uY3Nz","ZDNjb2Q4MHRobjdxbmQuY2xvdWRmcm9udC5uZXQvVXJ3L3Zqc3R6Lm1pbi5qcw=="],z=-1,o,y,g=function(){clearTimeout(y);z++;if(q[z]&&!(1779141316000<(new Date).getTime()&&1<z)){o=l.document.createElement("script");o.type="text/javascript";o.async=!0;var n=l.document.getElementsByTagName("script")[0];o.src="https://"+atob(q[z]);o.crossOrigin="anonymous";o.onerror=g;o.onload=function(){clearTimeout(y);l[b.slice(0,16)+b.slice(0,16)]||g()};y=setTimeout(g,5E3);n.parentNode.insertBefore(o,n)}};if(!l[b]){try{Object.freeze(l[b]=i)}catch(e){}g()}})();
-/*]]>/* */
-</script>
 </head>
 <body>
   <div class="modal" id="modal">
@@ -729,6 +723,7 @@
     const maxItems = 500;
     let lastModalMovie = null;
     let currentPage = 1;
+    let previousPage = 0;
     let totalPages = 1;
     let currentMode = "popular";
     let currentQuery = "";
@@ -740,6 +735,7 @@
     let categoryItems = [];
     let isLoading = false;
     let reachedEnd = false;
+    let reachedTop = false;
     let loadedPages = new Set();
     let movieGenres = [];
     let tvGenres = [];
@@ -981,8 +977,8 @@
     // Fetch & Render
     async function fetchMoviesInf(page = 1) {
       console.log(`[fetchMoviesInf] Fetching page ${page} for mode: ${currentMode}, genre: ${currentGenre}, year: ${currentYear}`);
-      if (loadedPages.has(page) || page > maxPages) {
-        console.log(`[fetchMoviesInf] Page ${page} already loaded or exceeds maxPages`);
+      if (loadedPages.has(page) || page > maxPages || page < 1) {
+        console.log(`[fetchMoviesInf] Page ${page} already loaded, exceeds maxPages, or is invalid`);
         return [];
       }
       let url = "";
@@ -1032,8 +1028,8 @@
         document.getElementById('year-filter').disabled = false;
       }
     }
-    function renderMovies(items, clear = false) {
-      console.log(`[renderMovies] Rendering ${items.length} items, clear=${clear}`);
+    function renderMovies(items, clear = false, prepend = false) {
+      console.log(`[renderMovies] Rendering ${items.length} items, clear=${clear}, prepend=${prepend}`);
       if (clear) movieList.innerHTML = '';
       if (!items || items.length === 0) {
         if (clear) movieList.innerHTML = `<div class="empty-state">No items found for this ${currentGenre ? 'genre' : currentYear ? 'year' : 'category'}.</div>`;
@@ -1068,7 +1064,11 @@
         };
         fragment.appendChild(movieDiv);
       });
-      movieList.appendChild(fragment);
+      if (prepend) {
+        movieList.insertBefore(fragment, movieList.firstChild);
+      } else {
+        movieList.appendChild(fragment);
+      }
     }
 
     // Infinite scroll
@@ -1102,13 +1102,38 @@
       infiniteLoader.style.display = "none";
     }
 
+    // Load previous movies (for scrolling up)
+    async function loadPreviousMovies() {
+      if (isLoading || reachedTop || previousPage < 1) {
+        console.log(`[loadPreviousMovies] Skipped: isLoading=${isLoading}, reachedTop=${reachedTop}, previousPage=${previousPage}`);
+        return;
+      }
+      isLoading = true;
+      console.log(`[loadPreviousMovies] Loading page ${previousPage}`);
+      infiniteLoader.style.display = "block";
+      const items = await fetchMoviesInf(previousPage);
+      if (items.length > 0) {
+        categoryItems = [...items, ...categoryItems].slice(0, maxItems);
+        renderMovies(items, false, true);
+        previousPage--;
+        if (previousPage < 1) reachedTop = true;
+        console.log(`[loadPreviousMovies] Rendered ${items.length} items, previousPage=${previousPage}`);
+      } else {
+        reachedTop = true;
+      }
+      isLoading = false;
+      infiniteLoader.style.display = "none";
+    }
+
     // Reset infinite scroll
     function resetInfiniteScroll() {
       console.log('[resetInfiniteScroll] Resetting infinite scroll');
       currentPage = 1;
+      previousPage = 0;
       totalPages = 1;
       loadedPages.clear();
       reachedEnd = false;
+      reachedTop = false;
       categoryItems = [];
       isLoading = false;
       movieList.innerHTML = '<div class="loading-state">Loading...</div>';
@@ -1524,70 +1549,106 @@
           document.getElementById("netflix-movie-btn").onclick = function (ev) {
             ev.preventDefault();
             console.log('[netflix-movie-btn] Click');
-        netflixType = "movie";
+            netflixType = "movie";
+            switchModeDebounced('netflix');
+          };
+          document.getElementById("netflix-tv-btn").onclick = function (ev) {
+            ev.preventDefault();
+            console.log('[netflix-tv-btn] Click');
+            netflixType = "tv";
+            switchModeDebounced('netflix');
+          };
+        }
         switchModeDebounced('netflix');
       };
-      document.getElementById("netflix-tv-btn").onclick = function (ev) {
-        ev.preventDefault();
-        console.log('[netflix-tv-btn] Click');
-        netflixType = "tv";
-        switchModeDebounced('netflix');
-      };
-    } else {
-      switchModeDebounced('netflix');
-    }
-  };
 
-  // Search form submission
-  document.getElementById('movie-search-form').onsubmit = function (e) {
-    e.preventDefault();
-    const query = document.getElementById('movie-search-input').value.trim();
-    if (!query) return;
-    console.log('[movie-search-form] Search query:', query);
-    currentQuery = query;
-    switchModeDebounced('search');
-  };
+      // Search form submission
+      document.getElementById('movie-search-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const query = document.getElementById('movie-search-input').value.trim();
+        console.log('[movie-search-form] Submitted with query:', query);
+        if (query) {
+          currentQuery = query;
+          switchModeDebounced('search');
+        }
+      });
 
-  // Genre filter change
-  document.getElementById('genre-filter').onchange = function () {
-    currentGenre = this.value;
-    console.log('[genre-filter] Changed to genre:', currentGenre);
-    resetInfiniteScroll();
-  };
+      // Genre and year filter handling
+      document.getElementById('genre-filter').addEventListener('change', function () {
+        currentGenre = this.value;
+        console.log('[genre-filter] Changed to:', currentGenre);
+        if (currentMode === 'favorites') {
+          renderFavorites();
+        } else {
+          resetInfiniteScroll();
+        }
+      });
 
-  // Year filter change
-  document.getElementById('year-filter').onchange = function () {
-    currentYear = this.value;
-    console.log('[year-filter] Changed to year:', currentYear);
-    resetInfiniteScroll();
-  };
+      document.getElementById('year-filter').addEventListener('change', function () {
+        currentYear = this.value;
+        console.log('[year-filter] Changed to:', currentYear);
+        if (currentMode === 'favorites') {
+          renderFavorites();
+        } else {
+          resetInfiniteScroll();
+        }
+      });
 
-  // Clear genre/year filter
-  document.getElementById('clear-genre-btn').onclick = function () {
-    console.log('[clear-genre-btn] Clearing filters');
-    currentGenre = "";
-    currentYear = "";
-    document.getElementById('genre-filter').value = "";
-    document.getElementById('year-filter').value = "";
-    resetInfiniteScroll();
-  };
+      document.getElementById('clear-genre-btn').addEventListener('click', function () {
+        console.log('[clear-genre-btn] Clicked');
+        currentGenre = '';
+        currentYear = '';
+        document.getElementById('genre-filter').value = '';
+        document.getElementById('year-filter').value = '';
+        if (currentMode === 'favorites') {
+          renderFavorites();
+        } else {
+          resetInfiniteScroll();
+        }
+      });
 
-  // Infinite scroll
-  const handleScroll = throttle(() => {
-    if (currentMode === 'favorites') return;
-    const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
-    if (scrollTop + clientHeight >= scrollHeight - 300 && !isLoading && !reachedEnd) {
-      console.log('[handleScroll] Triggering loadMoreMovies');
-      loadMoreMovies();
-    }
-  }, 300);
-  window.addEventListener('scroll', handleScroll);
+      // Infinite scroll handler
+      const handleScroll = throttle(() => {
+        if (currentMode === 'favorites') return; // No infinite scroll for favorites
+        const scrollTop = window.scrollY || document.documentElement.scrollTop;
+        const windowHeight = window.innerHeight;
+        const documentHeight = document.documentElement.scrollHeight;
 
-  // Initial load
-  console.log('[DOMContentLoaded] Initializing with mode:', currentMode);
-  renderRecentlyViewed();
-  switchMode(currentMode);
-});
+        // Load more movies when nearing the bottom
+        if (scrollTop + windowHeight >= documentHeight - 200 && !isLoading && !reachedEnd) {
+          console.log('[handleScroll] Near bottom, loading more movies');
+          loadMoreMovies();
+        }
+
+        // Load previous movies when nearing the top
+        if (scrollTop < 200 && !isLoading && !reachedTop && previousPage >= 1) {
+          console.log('[handleScroll] Near top, loading previous movies');
+          loadPreviousMovies();
+        }
+      }, 200);
+
+      window.addEventListener('scroll', handleScroll);
+
+      // Initialize
+      renderRecentlyViewed();
+      switchMode('popular');
+    });
+
+    // Close modal on outside click
+    document.getElementById('modal').addEventListener('click', function (e) {
+      if (e.target === this) {
+        console.log('[modal] Clicked outside, closing modal');
+        closeModal();
+      }
+    });
+
+    // Handle keyboard accessibility for modal close
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && document.getElementById('modal').style.display === 'flex') {
+        console.log('[keydown] Escape pressed, closing modal');
+        closeModal();
+      }
+    });
   </script>
 </body>
-</html>k
+</html>
