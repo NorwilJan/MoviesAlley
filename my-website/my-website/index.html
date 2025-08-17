@@ -653,9 +653,6 @@
   <div class="tm-hero d-flex justify-content-center align-items-center" data-parallax="scroll" data-image-src="">
     <form class="d-flex tm-search-form" id="movie-search-form" autocomplete="off" style="width: 100%; max-width: 600px; margin: 2em auto;">
       <input class="form-control tm-search-input" type="search" id="movie-search-input" placeholder="Search for movies or TV shows..." aria-label="Search">
-      <button class="btn btn-outline-secondary" type="button" id="clear-search-btn" style="margin-left: 5px;">
-        <i class="fas fa-times"></i>
-      </button>
       <button class="btn btn-outline-success tm-search-btn" type="submit">
         <i class="fas fa-search"></i>
       </button>
@@ -1541,15 +1538,14 @@
           switcher.style = "margin-top: 6px; margin-bottom: 2px;";
           switcher.innerHTML = `<button id="netflix-movie-btn" class="btn btn-danger btn-sm" style="margin-right: 7px;">Movies</button>
             <button id="netflix-tv-btn" class="btn btn-danger btn-sm">TV Shows</button>`;
-          nav.appendChild(switcher);
-          document.getElementById("netflix-movie-btn").onclick = function () {
-  netflixType = "movie";
-  switchModeDebounced('netflix');
-};
-document.getElementById("netflix-tv-btn").onclick = function () {
-  netflixType = "tv";
-  switchModeDebounced('netflix');
-};
+          nav.appendChild(switcher);document.getElementById("netflix-movie-btn").onclick = function () {
+            netflixType = "movie";
+            switchModeDebounced('netflix');
+          };
+          document.getElementById("netflix-tv-btn").onclick = function () {
+            netflixType = "tv";
+            switchModeDebounced('netflix');
+          };
         }
         switchModeDebounced('netflix');
       };
@@ -1571,11 +1567,13 @@ document.getElementById("netflix-tv-btn").onclick = function () {
         switchModeDebounced('search');
       }, 300);
 
-      // Clear search button
-      document.getElementById('clear-search-btn').onclick = function () {
-        document.getElementById('movie-search-input').value = '';
-        currentQuery = '';
-        switchModeDebounced('popular');
+      // Handle browser's default clear button or manual clear
+      document.getElementById('movie-search-input').oninput = function () {
+        if (!this.value.trim()) {
+          console.log('[movie-search-input] Input cleared, resetting to popular');
+          currentQuery = '';
+          switchModeDebounced('popular');
+        }
       };
 
       // Genre and year filter handling
