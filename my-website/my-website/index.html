@@ -498,6 +498,27 @@
       opacity: 0.9;
       visibility: visible;
     }
+    /* Buy Me a Coffee Button Styles */
+    .bmc-button {
+      height: 40px !important;
+      width: 145px !important;
+      transition: transform 0.2s, opacity 0.2s;
+      display: inline-block;
+      filter: brightness(1);
+      /* Optional: Uncomment to match site’s blue theme */
+      /* filter: hue-rotate(200deg) brightness(0.9); */
+    }
+    .bmc-button:hover,
+    .bmc-button:focus {
+      filter: brightness(1.1);
+      transform: scale(1.05);
+    }
+    @media (max-width: 767.98px) {
+      .bmc-button {
+        height: 36px !important;
+        width: 130px !important;
+      }
+    }
   </style>
   <script type="text/javascript" data-cfasync="false">
 /*<![CDATA[/* */
@@ -649,6 +670,11 @@
           <h3 class="tm-text-primary mb-4 tm-footer-title">Quick Links</h3>
           <ul class="tm-footer-links pl-0">
             <li><a href="mailto:norwilaxie@gmail.com">Contact</a></li>
+            <li>
+              <a href="https://www.buymeacoffee.com/MovieDckWFPH" target="_blank" rel="noopener" aria-label="Support us on Buy Me a Coffee">
+                <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee" class="bmc-button">
+              </a>
+            </li>
           </ul>
         </div>
         <div class="col-lg-3 col-md-6 col-sm-6 col-12 px-5 mb-5">
@@ -1521,29 +1547,49 @@
       };
       document.getElementById('clear-genre-btn').onclick = function () {
         console.log('[clear-genre-btn] Clearing filters');
-        genreFilter.value = "";
-        document.getElementById('year-filter').value = "";
         currentGenre = "";
         currentYear = "";
+        genreFilter.value = "";
+        document.getElementById('year-filter').value = "";
+        genreFilter.setAttribute('aria-activedescendant', genreFilter.options[genreFilter.selectedIndex].id || '');
+        document.getElementById('year-filter').setAttribute('aria-activedescendant', document.getElementById('year-filter').options[document.getElementById('year-filter').selectedIndex].id || '');
         if (currentMode === "favorites") {
-          renderFavorites();
+          renderMovies(categoryItems, true);
         } else {
           resetInfiniteScroll();
         }
-        genreFilter.focus();
       };
 
-      // Infinite scroll handler
-      window.addEventListener('scroll', () => {
-        if (currentMode === 'favorites') return;
-        if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100 && !isLoading && !reachedEnd) {
-          console.log('[scroll] Triggering loadMoreMovies');
+      // Infinite scroll event
+      const handleScroll = throttle(() => {
+        console.log('[handleScroll] Checking scroll position');
+        if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 200 && !isLoading && !reachedEnd) {
+          console.log('[handleScroll] Triggering loadMoreMovies');
           loadMoreMovies();
+        }
+      }, 300);
+      window.addEventListener('scroll', handleScroll);
+
+      // Initial load
+      console.log('[DOMContentLoaded] Initializing');
+      renderRecentlyViewed();
+      switchMode('popular');
+
+      // Keyboard navigation
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          console.log('[keydown] Escape pressed, closing modal');
+          closeModal();
         }
       });
 
-      renderRecentlyViewed();
-      resetInfiniteScroll();
+      // Track Buy Me a Coffee button clicks
+      document.querySelectorAll('a[href*="buymeacoffee"]').forEach(link => {
+        link.addEventListener('click', () => {
+          console.log('Buy Me a Coffee button clicked');
+          // Add analytics code here if needed (e.g., Google Analytics event)
+        });
+      });
     });
   </script>
 </body>
