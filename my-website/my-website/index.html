@@ -547,6 +547,17 @@
         width: 130px !important;
       }
     }
+    .movie-poster-img {
+      loading: lazy; /* Add lazy loading for images */
+    }
+    #movie-list {
+      min-height: 100vh; /* Default min-height */
+    }
+    @media (min-width: 768px) and (max-width: 1199.98px) {
+      #movie-list {
+        min-height: 150vh; /* Increased min-height for tablets */
+      }
+    }
   </style>
   <script type="text/javascript" data-cfasync="false">
 /*<![CDATA[/* */
@@ -967,7 +978,7 @@
         div.className = "movie-col";
         div.innerHTML = `
           <div class="movie-poster-wrapper" tabindex="0">
-            <img src="${item.poster_path ? imageBaseUrl + item.poster_path : 'img/no-poster.png'}" alt="${item.title}" class="img-fluid movie-poster-img">
+            <img loading="lazy" src="${item.poster_path ? imageBaseUrl + item.poster_path : 'img/no-poster.png'}" alt="${item.title}" class="img-fluid movie-poster-img">
           </div>
           <div class="movie-metadata">
             <span class="movie-title" title="${item.title}">${item.title}</span>
@@ -997,6 +1008,8 @@
         console.log('[fetchMoviesInf] Favorites mode, skipping fetch');
         return [];
       }
+      const isTablet = window.matchMedia("(min-width: 768px) and (max-width: 1199.98px)").matches;
+      const perPage = isTablet ? 40 : 20; // Fetch more items on tablets
       if (currentMode === "search" && currentQuery.trim()) {
         url = `https://api.themoviedb.org/3/search/multi?api_key=${apiKey}&query=${encodeURIComponent(currentQuery)}&page=${page}&include_adult=false`;
       } else if (currentMode === "anime") {
@@ -1033,7 +1046,7 @@
         totalPages = Math.min(data.total_pages || 1, maxPages);
         loadedPages.add(page);
         console.log(`[fetchMoviesInf] Fetched ${data.results.length} items for page ${page}`);
-        return data.results;
+        return data.results.slice(0, perPage); // Limit to perPage items
       } catch (e) {
         console.error('[fetchMoviesInf] Error:', e);
         movieList.innerHTML = `<div class="error-state">Failed to load content. Please check your connection or try again later.</div>`;
@@ -1059,7 +1072,7 @@
         movieDiv.className = 'movie-col';
         movieDiv.innerHTML = `
           <div class="movie-poster-wrapper" tabindex="0">
-            <img src="${item.poster_path ? imageBaseUrl + item.poster_path : 'img/no-poster.png'}" alt="${isTv ? item.name : item.title}" class="img-fluid movie-poster-img">
+            <img loading="lazy" src="${item.poster_path ? imageBaseUrl + item.poster_path : 'img/no-poster.png'}" alt="${isTv ? item.name : item.title}" class="img-fluid movie-poster-img">
             <button class="play-btn-centered" type="button" title="${isTv ? "View TV Show" : "Play Movie"}">
               <i class="fas fa-${isTv ? "tv" : "play"}"></i>
             </button>
@@ -1172,7 +1185,7 @@
             let html = `<div style="margin-top: 1.3em;"><b>Similar Movies:</b><div style="display: flex; gap: 1em; overflow-x: auto; padding-top: 0.7em;">`;
             data.results.slice(0, 8).forEach(m => {
               html += `<div style="width: 110px; text-align: center;">
-                <img src="${m.poster_path ? imageBaseUrl + m.poster_path : 'img/no-poster.png'}" alt="${m.title}" style="width: 100px; border-radius: 7px; cursor: pointer;" onclick="showDetailsFromId(${m.id})">
+                <img loading="lazy" src="${m.poster_path ? imageBaseUrl + m.poster_path : 'img/no-poster.png'}" alt="${m.title}" style="width: 100px; border-radius: 7px; cursor: pointer;" onclick="showDetailsFromId(${m.id})">
                 <div style="font-size: 0.93em; margin-top: 0.3em;">${m.title}</div>
               </div>`;
             });
@@ -1481,6 +1494,9 @@
       fetchGenres();
       populateYearFilter();
 
+      const isTablet = window.matchMedia("(min-width: 768px) and (max-width: 1199.98px)").matches;
+      movieList.style.minHeight = isTablet ? '150vh' : '100vh';
+
       window.addEventListener('scroll', () => {
         if (window.scrollY > 400) {
           document.getElementById('back-to-top').classList.add('visible');
@@ -1538,7 +1554,8 @@
           switcher.style = "margin-top: 6px; margin-bottom: 2px;";
           switcher.innerHTML = `<button id="netflix-movie-btn" class="btn btn-danger btn-sm" style="margin-right: 7px;">Movies</button>
             <button id="netflix-tv-btn" class="btn btn-danger btn-sm">TV Shows</button>`;
-          nav.appendChild(switcher);document.getElementById("netflix-movie-btn").onclick = function () {
+          nav.appendChild(switcher);
+          document.getElementById("netflix-movie-btn").onclick = function () {
             netflixType = "movie";
             switchModeDebounced('netflix');
           };
@@ -1597,10 +1614,20 @@
       };
 
       // Infinite scroll event listener
-      window.addEventListener('scroll', () => {
+      window.addEventListener('scroll', throttle(() => {
         if (currentMode === 'favorites') return;
         const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
-        if (scrollTop + clientHeight >= scrollHeight - 100 && !isLoading && !reachedEnd) {
+        if (scrollTop + clientHeight >= scrollHeight - 300 && !isLoading && !reachedEnd) {
+          loadMoreMovies();
+        }
+      }, 200));
+
+      // Add touchend for tablets/mobile
+      window.addEventListener('touchend', () => {
+        if (currentMode === 'favorites') return;
+        const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+        if (scrollTop + clientHeight >= scrollHeight - 300 && !isLoading && !reachedEnd) {
+          console.log('[touchend] Triggering loadMoreMovies');
           loadMoreMovies();
         }
       });
