@@ -78,6 +78,55 @@
       .navbar-brand .logo-text {
         font-size: clamp(1.4rem, 4vw, 1.8rem);
       }
+      .movie-col {
+        width: 33.3333%; /* 3 movies per row */
+        flex: 0 0 33.3333%;
+        max-width: 33.3333%;
+      }
+      #movie-list {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr); /* 3 columns */
+        gap: 1rem;
+        max-height: calc(2 * (clamp(150px, 50vw, 200px) + 2rem)); /* 2 rows */
+        overflow-y: hidden; /* Hide additional rows */
+      }
+      #movie-list.loaded {
+        max-height: none; /* Allow full height after initial load */
+        overflow-y: visible;
+      }
+    }
+    @media (min-width: 768px) and (max-width: 991.98px) {
+      .movie-col {
+        width: 25%;
+        flex: 0 0 25%;
+        max-width: 25%;
+      }
+      #back-to-top {
+        bottom: 20px; /* Adjust to avoid footer overlap */
+        right: 20px;
+        z-index: 1000; /* Ensure it’s above other content */
+        opacity: 0.9;
+      }
+      #back-to-top.visible {
+        opacity: 1; /* Full visibility when active */
+      }
+      #bmc-hover-btn {
+        bottom: 20px;
+        right: 80px; /* Prevent overlap with back-to-top */
+        z-index: 999;
+      }
+    }
+    @media (min-width: 1200px) {
+      .movie-col {
+        width: 16.6666%;
+        flex: 0 0 16.6666%;
+        max-width: 16.6666%;
+      }
+    }
+    @media (max-width: 575.98px) {
+      .movie-col {
+        width: 33.3333%; /* Maintain 3 per row even on very small screens */
+      }
     }
     .movie-poster-wrapper, .movie-col {
       background: transparent !important;
@@ -384,18 +433,6 @@
       align-items: center;
       position: relative;
     }
-    @media (min-width: 1200px) {
-      .movie-col { width: 16.6666%; flex: 0 0 16.6666%; max-width: 16.6666%; }
-    }
-    @media (min-width: 768px) and (max-width: 1199.98px) {
-      .movie-col { width: 25%; flex: 0 0 25%; max-width: 25%; }
-    }
-    @media (max-width: 767.98px) {
-      .movie-col { width: 50%; flex: 0 0 50%; max-width: 50%; }
-    }
-    @media (max-width: 575.98px) {
-      .movie-col { width: 100%; flex: 0 0 100%; max-width: 100%; }
-    }
     .movie-title {
       font-size: clamp(0.9em, 2.5vw, 1em);
       white-space: nowrap;
@@ -571,7 +608,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 100;
+      z-index: 1000;
       opacity: 0;
       visibility: hidden;
       cursor: pointer;
@@ -591,7 +628,7 @@
       right: 90px;
       background: transparent;
       border: none;
-      z-index: 100;
+      z-index: 999;
       opacity: 0;
       visibility: hidden;
       cursor: pointer;
@@ -1144,8 +1181,10 @@
         }
         return;
       }
+      const isMobile = window.matchMedia('(max-width: 767.98px)').matches;
+      const itemsToRender = isMobile && clear ? items.slice(0, 6) : items; // Limit to 6 items on mobile for initial load
       const fragment = document.createDocumentFragment();
-      items.forEach(item => {
+      itemsToRender.forEach(item => {
         const isTv = item.media_type === 'tv' || !!item.name && !item.title;
         const mediaType = isTv ? 'tv' : 'movie';
         const title = isTv ? item.name : item.title;
@@ -1185,6 +1224,9 @@
       } else {
         movieList.appendChild(fragment);
       }
+      if (isMobile && clear) {
+        movieList.classList.add('loaded'); // Allow full height after initial render
+      }
     }
 
     async function loadMoreMovies(clear = false) {
@@ -1197,16 +1239,19 @@
       if (clear) {
         movieList.innerHTML = '<div class="loading-state">Loading...</div>';
         categoryItems = [];
+        movieList.classList.remove('loaded'); // Reset for initial 2x3 grid on mobile
       }
       infiniteLoader.style.display = 'block';
       const items = await fetchMoviesInf(currentPage);
       if (items.length > 0) {
         if (clear) categoryItems = items;
         else categoryItems = [...categoryItems, ...items].slice(0, maxItems);
-        renderMovies(items, clear);
+        const isMobile = window.matchMedia('(max-width: 767.98px)').matches;
+        const itemsToRender = isMobile && clear ? items.slice(0, 6) : items; // Limit to 6 on mobile for clear
+        renderMovies(itemsToRender, clear);
         currentPage++;
         if (currentPage > totalPages) reachedEnd = true;
-        console.log(`[loadMoreMovies] Rendered ${items.length} items, currentPage=${currentPage}, totalPages=${totalPages}`);
+        console.log(`[loadMoreMovies] Rendered ${itemsToRender.length} items, currentPage=${currentPage}, totalPages=${totalPages}`);
       } else {
         reachedEnd = true;
         if (clear && !categoryItems.length) {
@@ -1502,8 +1547,7 @@
       if (navigator.share && isMobileOrTablet()) {
         navigator.share({ title, text, url })
           .catch(err => console.error('[shareTvShow] Error:', err));
-      } else {
-        navigator.clipboard.writeText(`${text} ${url}`)
+      } else {navigator.clipboard.writeText(`${text} ${url}`)
           .then(() => alert('Link copied to clipboard!'))
           .catch(err => console.error('[shareTvShow] Clipboard error:', err));
       }
@@ -1513,41 +1557,32 @@
       document.getElementById('modal').style.display = 'none';
       const iframes = [document.getElementById('modal-video'), document.getElementById('tv-episode-player')];
       iframes.forEach(iframe => {
-        iframe.src = '';
-        iframe.parentElement.querySelector('.iframe-play-overlay').style.display = 'block';
+        if (iframe.src) {
+          iframe.src = '';
+          const playOverlay = iframe.parentElement.querySelector('.iframe-play-overlay');
+          if (playOverlay) playOverlay.style.display = 'block';
+        }
       });
-      lastModalMovie = null;
-      tvModalData = { tvId: null, season: null, episode: null, seasons: [] };
-      if (window.scrollY > 400) {
-        document.getElementById('bmc-hover-btn').classList.add('visible');
-      }
+      document.getElementById('modal-content-movie').style.display = 'none';
+      document.getElementById('modal-content-tv').style.display = 'none';
+      tvModalData.season = null;
+      tvModalData.episode = null;
+      document.getElementById('tv-episode-next-btn').style.display = 'none';
     }
 
     function setActiveNav(mode) {
       document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
-      const navIds = {
-        popular: 'nav-movies',
-        tv: 'nav-tvshows',
-        anime: 'nav-anime',
-        tagalog: 'nav-tagalog',
-        netflix: 'nav-netflix',
-        favorites: 'nav-favorites',
-        search: 'nav-movies'
-      };
-      if (navIds[mode]) {
-        document.getElementById(navIds[mode]).classList.add('active');
-      }
+      const navLink = document.getElementById(`nav-${mode === 'search' ? 'movies' : mode}`);
+      if (navLink) navLink.classList.add('active');
     }
 
     function switchMode(newMode) {
-      if (currentMode === newMode && !(newMode === 'search' && currentQuery)) {
-        console.log(`[switchMode] Already in mode: ${newMode}, skipping.`);
-        return;
+      if (newMode === 'netflix') {
+        netflixType = netflixType === 'movie' ? 'tv' : 'movie';
       }
-      console.log(`[switchMode] Switching to mode: ${newMode}`);
-      currentMode = newMode;
-      netflixType = newMode === 'netflix' ? netflixType : 'movie';
-      document.getElementById('nav-favorites').classList.remove('favorited');
+      if (newMode !== currentMode) {
+        currentMode = newMode;
+      }
       const sectionTitle = document.getElementById('section-title');
       sectionTitle.textContent = {
         popular: 'Trending Movies',
