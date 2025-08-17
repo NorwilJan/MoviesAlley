@@ -1,182 +1,81 @@
-// scripts.js
+const API_KEY = '40f1982842db35042e8561b13b38d492';
+const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
 
-const apiKey = '40f1982842db35042e8561b13b38d492';
-const imageBaseUrl = 'https://image.tmdb.org/t/p/w500';
-
-let currentPage = 1;
-let currentMode = 'popular';
-let currentGenre = '';
-let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-let isLoading = false;
-let totalPages = 1;
-let loadedPages = new Set();
-
-const movieList = document.getElementById('movie-list');
-const genreFilter = document.getElementById('genre-filter');
-const infiniteLoader = document.getElementById('infinite-loader');
-const backToTopBtn = document.getElementById('back-to-top');
-
-// Utility: Throttle function
-function throttle(func, limit) {
-  let inThrottle;
-  return (...args) => {
-    if (!inThrottle) {
-      func(...args);
-      inThrottle = true;
-      setTimeout(() => (inThrottle = false), limit);
-    }
-  };
+export async function fetchGenres() {
+  try {
+    const [movieRes, tvRes] = await Promise.all([
+      fetch(`https://api.themoviedb.org/3/genre/movie/list?api_key=${API_KEY}`),
+      fetch(`https://api.themoviedb.org/3/genre/tv/list?api_key=${API_KEY}`)
+    ]);
+    if (!movieRes.ok || !tvRes.ok) throw new Error('Failed to fetch genres');
+    const [movieData, tvData] = await Promise.all([movieRes.json(), tvRes.json()]);
+    return { movieGenres: movieData.genres || [], tvGenres: tvData.genres || [] };
+  } catch (error) {
+    console.error('Error fetching genres:', error);
+    return { movieGenres: [], tvGenres: [] };
+  }
 }
 
-// Check device type for orientation handling or other purposes
-const isMobileOrTablet = () =>
-  /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-  window.matchMedia('(max-width: 991.98px)').matches;
+export async function fetchMoviesInf(page, mode, query, genre, year, netflixType) {
+  const isTablet = window.matchMedia("(min-width: 768px) and (max-width: 1199.98px)").matches;
+  const perPage = isTablet ? 40 : 20;
+  let url = '';
 
-// Fetch JSON helper
-async function fetchJSON(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Failed to fetch: ${res.statusText}`);
-  return res.json();
-}
-
-// Save favorites
-function saveFavorites() {
-  localStorage.setItem('favorites', JSON.stringify(favorites));
-}
-
-// Check if favorite
-function isFavorite(id, media_type) {
-  return favorites.some((f) => f.id === id && f.media_type === media_type);
-}
-
-// Toggle favorite
-function toggleFavorite(id, media_type) {
-  if (isFavorite(id, media_type)) {
-    favorites = favorites.filter((f) => f.id !== id || f.media_type !== media_type);
+  if (mode === 'search' && query.trim()) {
+    url = `https://api.themoviedb.org/3/search/multi?api_key=${API_KEY}&query=${encodeURIComponent(query)}&page=${page}&include_adult=false`;
+  } else if (mode === 'anime') {
+    url = `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&with_genres=${genre || 16}&with_original_language=ja${year ? `&primary_release_year=${year}` : ''}&sort_by=popularity.desc&page=${page}`;
+  } else if (mode === 'tagalog') {
+    url = `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}&with_original_language=tl${genre ? `&with_genres=${genre}` : ''}${year ? `&primary_release_year=${year}` : ''}&sort_by=popularity.desc&page=${page}`;
+  } else if (mode === 'tv') {
+    url = `https://api.themoviedb.org/3/discover/tv?api_key=${API_KEY}${genre ? `&with_genres=${genre}` : ''}${year ? `&first_air_date_year=${year}` : ''}&sort_by=popularity.desc&page=${page}`;
+  } else if (mode === 'netflix') {
+    url = `https://api.themoviedb.org/3/discover/${netflixType}?api_key=${API_KEY}&with_watch_providers=8&watch_region=US${genre ? `&with_genres=${genre}` : ''}${year ? `&${netflixType === 'movie' ? 'primary_release_year' : 'first_air_date_year'}=${year}` : ''}&sort_by=popularity.desc&page=${page}`;
   } else {
-    favorites.push({ id, media_type });
+    url = `https://api.themoviedb.org/3/discover/movie?api_key=${API_KEY}${genre ? `&with_genres=${genre}` : ''}${year ? `&primary_release_year=${year}` : ''}&sort_by=popularity.desc&page=${page}`;
   }
-  saveFavorites();
-  updateFavoriteButtons();
-  if (currentMode === 'favorites') {
-    renderFavorites();
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+    const data = await response.json();
+    return { results: data.results?.slice(0, perPage) || [], totalPages: Math.min(data.total_pages || 1, 100) };
+  } catch (error) {
+    console.error('Error fetching movies:', error);
+    return { results: [], totalPages: 1 };
   }
 }
 
-// Update all favorite buttons on the page
-function updateFavoriteButtons() {
-  document.querySelectorAll('.favorite-btn').forEach((btn) => {
-    const movieCol = btn.closest('.movie-col');
-    if (!movieCol) return;
-    // Extract id and media_type from stored dataset or element attributes if available
-    const id = btn.dataset.id ? Number(btn.dataset.id) : null;
-    const media = btn.dataset.mediaType || null;
-
-    if (id && media && isFavorite(id, media)) {
-      btn.classList.add('favorited');
-    } else {
-      btn.classList.remove('favorited');
-    }
-  });
+export async function fetchMovieDetails(id, type = 'movie') {
+  try {
+    const response = await fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${API_KEY}&append_to_response=credits,videos`);
+    if (!response.ok) throw new Error('Failed to fetch details');
+    return await response.json();
+  } catch (error) {
+    console.error(`Error fetching ${type} details:`, error);
+    return null;
+  }
 }
 
-// Render movie/TV show cards
-function renderMovies(items, clear = false) {
-  if (clear) movieList.innerHTML = '';
-  if (!items.length) {
-    if (clear) {
-      movieList.innerHTML = `<div class="empty-state">No items found${currentGenre ? ` for genre "${currentGenre}"` : ''}.</div>`;
-    }
-    return;
+export async function fetchSimilarMovies(id) {
+  try {
+    const response = await fetch(`https://api.themoviedb.org/3/movie/${id}/similar?api_key=${API_KEY}`);
+    if (!response.ok) throw new Error('Failed to fetch similar movies');
+    const data = await response.json();
+    return data.results?.slice(0, 8) || [];
+  } catch (error) {
+    console.error('Error fetching similar movies:', error);
+    return [];
   }
-  const fragment = document.createDocumentFragment();
-  items.forEach((item) => {
-    const isTv = item.media_type === 'tv' || (!!item.name && !item.title);
-    const mediaType = isTv ? 'tv' : 'movie';
-    const title = isTv ? item.name : item.title;
-    const releaseDate = isTv ? item.first_air_date : item.release_date;
-    const poster = item.poster_path ? `${imageBaseUrl}${item.poster_path}` : 'img/no-poster.png';
-
-    const movieCol = document.createElement('div');
-    movieCol.className = 'movie-col';
-    movieCol.tabIndex = 0;
-    movieCol.innerHTML = `
-      <div class="movie-poster-wrapper">
-        <img
-          src="${poster}"
-          alt="${title} poster"
-          class="movie-poster-img"
-          loading="lazy"
-          width="200"
-          height="300"
-          decoding="async"
-        />
-        <button class="play-btn-centered" type="button" aria-label="${isTv ? 'View TV Show' : 'Play Movie'}">
-          <i class="fas fa-${isTv ? 'tv' : 'play'}"></i>
-        </button>
-        <button class="favorite-btn${isFavorite(item.id, mediaType) ? ' favorited' : ''}" type="button" aria-label="Toggle favorite" data-id="${item.id}" data-media-type="${mediaType}">
-          <i class="fas fa-heart"></i>
-        </button>
-      </div>
-      <div class="movie-metadata">
-        <span class="movie-title" title="${title}">${title}</span>
-        <span class="movie-year">${releaseDate ? releaseDate.slice(0, 4) : ''}</span>
-        ${isTv ? `<span class="movie-type" aria-label="TV Show">TV Show</span>` : ''}
-      </div>
-    `;
-
-    movieCol.querySelector('.play-btn-centered').addEventListener('click', () => {
-      if (isTv) {
-        showTvDetails(item);
-      } else {
-        showDetails(item);
-      }
-    });
-
-    movieCol.querySelector('.favorite-btn').addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggleFavorite(item.id, mediaType);
-    });
-
-    // Keyboard accessibility: enter/space triggers click
-    movieCol.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        if (isTv) showTvDetails(item);
-        else showDetails(item);
-      }
-    });
-
-    fragment.appendChild(movieCol);
-  });
-  movieList.appendChild(fragment);
-  updateFavoriteButtons();
 }
 
-// TODO: Implement fetchGenres, loadMoreMovies, showDetails, showTvDetails, modal open/close handlers, infinite scroll, search form, etc., following the logic you had but cleaned and without inline handlers.
-
-
-// Back to top button visibility toggle
-const toggleBackToTopVisibility = throttle(() => {
-  if (window.scrollY > 300) {
-    backToTopBtn.hidden = false;
-    backToTopBtn.setAttribute('aria-hidden', 'false');
-    backToTopBtn.classList.add('visible');
-  } else {
-    backToTopBtn.classList.remove('visible');
-    backToTopBtn.setAttribute('aria-hidden', 'true');
-    setTimeout(() => (backToTopBtn.hidden = true), 300);
+export async function fetchSeasonDetails(showId, seasonNumber) {
+  try {
+    const response = await fetch(`https://api.themoviedb.org/3/tv/${showId}/season/${seasonNumber}?api_key=${API_KEY}`);
+    if (!response.ok) throw new Error('Failed to fetch season details');
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching season details:', error);
+    return { episodes: [] };
   }
-}, 250);
-
-backToTopBtn.addEventListener('click', () => {
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-});
-
-window.addEventListener('scroll', toggleBackToTopVisibility);
-
-document.addEventListener('DOMContentLoaded', async () => {
-  // You will need to add your initialization here:
-  // e.g. fetchGenres(), initial movie load, attach event listeners to navigation, search form, modals, etc.
-});
+}
