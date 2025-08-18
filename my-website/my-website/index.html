@@ -228,7 +228,7 @@
       .movie-col { width: 25%; flex: 0 0 25%; max-width: 25%; }
     }
     @media (max-width: 767.98px) {
-      .movie-col { width: 33.3333%; flex: 0 0 33.3333%; max-width: 33.3333%; }
+      .movie-col { width: 50%; flex: 0 0 50%; max-width: 50%; }
     }
     .modal {
       display: none;
@@ -472,8 +472,8 @@
     }
     #back-to-top {
       position: fixed;
-      bottom: 20px;
-      right: 20px;
+      bottom: 30px;
+      right: 30px;
       background: #1976d2;
       color: #fff;
       border: none;
@@ -484,7 +484,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 1000;
+      z-index: 100;
       opacity: 0;
       visibility: hidden;
       cursor: pointer;
@@ -502,10 +502,7 @@
     .bmc-button {
       height: 40px !important;
       width: 145px !important;
-      background: #1a1f25 !important;
-      border: 1px solid #222 !important;
-      border-radius: 4px;
-      transition: transform 0.2s, opacity 0.2s, filter 0.2s;
+      transition: transform 0.2s, opacity 0.2s;
       display: inline-block;
       filter: brightness(1);
     }
@@ -513,15 +510,21 @@
     .bmc-button:focus {
       filter: brightness(1.1);
       transform: scale(1.05);
-      outline: none;
+    }
+    @media (max-width: 767.98px) {
+      .bmc-button {
+        height: 36px !important;
+        width: 130px !important;
+      }
     }
     #bmc-hover-btn {
       position: fixed;
-      bottom: 80px;
-      right: 20px;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%);
       background: transparent;
       border: none;
-      z-index: 1000;
+      z-index: 100;
       opacity: 0;
       visibility: hidden;
       cursor: pointer;
@@ -532,26 +535,27 @@
       visibility: visible;
     }
     #bmc-hover-btn:hover, #bmc-hover-btn:focus {
-      transform: scale(1.05);
+      transform: translateX(-50%) scale(1.05);
     }
-    @media (min-width: 768px) and (max-width: 991.98px) {
-      #bmc-hover-btn {
-        bottom: 70px;
-        right: 15px;
-      }
-      .bmc-button {
-        height: 38px !important;
-        width: 140px !important;
-      }
+    #bmc-hover-btn .bmc-button {
+      height: 40px !important;
+      width: 145px !important;
     }
     @media (max-width: 767.98px) {
-      #bmc-hover-btn {
-        bottom: 60px;
-        right: 10px;
-      }
-      .bmc-button {
+      #bmc-hover-btn .bmc-button {
         height: 36px !important;
         width: 130px !important;
+      }
+    }
+    .movie-poster-img {
+      loading: lazy; /* Add lazy loading for images */
+    }
+    #movie-list {
+      min-height: 100vh; /* Default min-height */
+    }
+    @media (min-width: 768px) and (max-width: 1199.98px) {
+      #movie-list {
+        min-height: 150vh; /* Increased min-height for tablets */
       }
     }
   </style>
@@ -774,6 +778,15 @@
       };
     }
 
+    // Debounce function
+    function debounce(func, wait) {
+      let timeout;
+      return function (...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+      };
+    }
+
     // Check if device is mobile or tablet
     function isMobileOrTablet() {
       return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
@@ -965,7 +978,7 @@
         div.className = "movie-col";
         div.innerHTML = `
           <div class="movie-poster-wrapper" tabindex="0">
-            <img src="${item.poster_path ? imageBaseUrl + item.poster_path : 'img/no-poster.png'}" alt="${item.title}" class="img-fluid movie-poster-img">
+            <img loading="lazy" src="${item.poster_path ? imageBaseUrl + item.poster_path : 'img/no-poster.png'}" alt="${item.title}" class="img-fluid movie-poster-img">
           </div>
           <div class="movie-metadata">
             <span class="movie-title" title="${item.title}">${item.title}</span>
@@ -985,7 +998,7 @@
 
     // Fetch & Render
     async function fetchMoviesInf(page = 1) {
-      console.log(`[fetchMoviesInf] Fetching page ${page} for mode: ${currentMode}, genre: ${currentGenre}, year: ${currentYear}`);
+      console.log(`[fetchMoviesInf] Fetching page ${page} for mode: ${currentMode}, genre: ${currentGenre}, year: ${currentYear}, query: ${currentQuery}`);
       if (loadedPages.has(page) || page > maxPages) {
         console.log(`[fetchMoviesInf] Page ${page} already loaded or exceeds maxPages`);
         return [];
@@ -995,6 +1008,8 @@
         console.log('[fetchMoviesInf] Favorites mode, skipping fetch');
         return [];
       }
+      const isTablet = window.matchMedia("(min-width: 768px) and (max-width: 1199.98px)").matches;
+      const perPage = isTablet ? 40 : 20; // Fetch more items on tablets
       if (currentMode === "search" && currentQuery.trim()) {
         url = `https://api.themoviedb.org/3/search/multi?api_key=${apiKey}&query=${encodeURIComponent(currentQuery)}&page=${page}&include_adult=false`;
       } else if (currentMode === "anime") {
@@ -1015,18 +1030,23 @@
       try {
         genreFilter.disabled = true;
         document.getElementById('year-filter').disabled = true;
+        if (!url) {
+          console.log('[fetchMoviesInf] No URL constructed, likely empty search query');
+          movieList.innerHTML = `<div class="empty-state">Please enter a search query.</div>`;
+          return [];
+        }
         const response = await fetch(url);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
         if (!data.results || data.results.length === 0) {
           console.log(`[fetchMoviesInf] No results for page ${page}`);
-          movieList.innerHTML = `<div class="empty-state">No items found for this ${currentGenre ? 'genre' : currentYear ? 'year' : 'category'}.</div>`;
+          movieList.innerHTML = `<div class="empty-state">No items found for "${currentQuery || 'this category'}"${currentGenre ? ` in genre ${currentGenre}` : ''}${currentYear ? ` from ${currentYear}` : ''}.</div>`;
           return [];
         }
         totalPages = Math.min(data.total_pages || 1, maxPages);
         loadedPages.add(page);
         console.log(`[fetchMoviesInf] Fetched ${data.results.length} items for page ${page}`);
-        return data.results;
+        return data.results.slice(0, perPage); // Limit to perPage items
       } catch (e) {
         console.error('[fetchMoviesInf] Error:', e);
         movieList.innerHTML = `<div class="error-state">Failed to load content. Please check your connection or try again later.</div>`;
@@ -1038,10 +1058,10 @@
       }
     }
     function renderMovies(items, clear = false) {
-      console.log(`[renderMovies] Rendering ${items.length} items, clear=${clear}`);
+      console.log(`[renderMovies] Rendering ${items.length} items, clear=${clear}`, items);
       if (clear) movieList.innerHTML = '';
       if (!items || items.length === 0) {
-        if (clear) movieList.innerHTML = `<div class="empty-state">No items found for this ${currentGenre ? 'genre' : currentYear ? 'year' : 'category'}.</div>`;
+        if (clear) movieList.innerHTML = `<div class="empty-state">No items found for "${currentQuery || 'this category'}"${currentGenre ? ` in genre ${currentGenre}` : ''}${currentYear ? ` from ${currentYear}` : ''}.</div>`;
         return;
       }
       const fragment = document.createDocumentFragment();
@@ -1052,7 +1072,7 @@
         movieDiv.className = 'movie-col';
         movieDiv.innerHTML = `
           <div class="movie-poster-wrapper" tabindex="0">
-            <img src="${item.poster_path ? imageBaseUrl + item.poster_path : 'img/no-poster.png'}" alt="${isTv ? item.name : item.title}" class="img-fluid movie-poster-img">
+            <img loading="lazy" src="${item.poster_path ? imageBaseUrl + item.poster_path : 'img/no-poster.png'}" alt="${isTv ? item.name : item.title}" class="img-fluid movie-poster-img">
             <button class="play-btn-centered" type="button" title="${isTv ? "View TV Show" : "Play Movie"}">
               <i class="fas fa-${isTv ? "tv" : "play"}"></i>
             </button>
@@ -1100,7 +1120,11 @@
       } else {
         reachedEnd = true;
         if (clear && !categoryItems.length) {
-          movieList.innerHTML = `<div class="empty-state">No items found for this ${currentGenre ? 'genre' : currentYear ? 'year' : 'category'}.</div>`;
+          setTimeout(() => {
+            if (!movieList.innerHTML.includes('movie-col')) {
+              movieList.innerHTML = `<div class="empty-state">No items found for "${currentQuery || 'this category'}"${currentGenre ? ` in genre ${currentGenre}` : ''}${currentYear ? ` from ${currentYear}` : ''}.</div>`;
+            }
+          }, 500);
         }
       }
       isLoading = false;
@@ -1126,7 +1150,7 @@
       document.getElementById('modal-content-movie').style.display = '';
       document.getElementById('modal-content-tv').style.display = 'none';
       document.getElementById('modal').style.display = 'flex';
-      document.getElementById('bmc-hover-btn').classList.remove('visible'); // Hide BMC button
+      document.getElementById('bmc-hover-btn').classList.remove('visible');
       lastModalMovie = movie;
       addRecentlyViewed(movie);
       document.getElementById('modal-title').textContent = movie.title;
@@ -1161,7 +1185,7 @@
             let html = `<div style="margin-top: 1.3em;"><b>Similar Movies:</b><div style="display: flex; gap: 1em; overflow-x: auto; padding-top: 0.7em;">`;
             data.results.slice(0, 8).forEach(m => {
               html += `<div style="width: 110px; text-align: center;">
-                <img src="${m.poster_path ? imageBaseUrl + m.poster_path : 'img/no-poster.png'}" alt="${m.title}" style="width: 100px; border-radius: 7px; cursor: pointer;" onclick="showDetailsFromId(${m.id})">
+                <img loading="lazy" src="${m.poster_path ? imageBaseUrl + m.poster_path : 'img/no-poster.png'}" alt="${m.title}" style="width: 100px; border-radius: 7px; cursor: pointer;" onclick="showDetailsFromId(${m.id})">
                 <div style="font-size: 0.93em; margin-top: 0.3em;">${m.title}</div>
               </div>`;
             });
@@ -1246,7 +1270,7 @@
       document.getElementById('modal-content-movie').style.display = 'none';
       document.getElementById('modal-content-tv').style.display = '';
       document.getElementById('modal').style.display = 'flex';
-      document.getElementById('bmc-hover-btn').classList.remove('visible'); // Hide BMC button
+      document.getElementById('bmc-hover-btn').classList.remove('visible');
       tvModalData.tvId = show.id;
       tvModalData.season = null;
       tvModalData.episode = null;
@@ -1303,7 +1327,7 @@
     window.playEpisode = async function(showId, season, episode) {
       tvModalData.season = season;
       tvModalData.episode = episode;
-      document.getElementById('bmc-hover-btn').classList.remove('visible'); // Ensure BMC button is hidden
+      document.getElementById('bmc-hover-btn').classList.remove('visible');
       const iframe = document.getElementById('tv-episode-player');
       const playOverlay = iframe.parentElement.querySelector('.iframe-play-overlay');
       const server = document.getElementById('server').value;
@@ -1384,7 +1408,6 @@
       });
       lastModalMovie = null;
       tvModalData = { tvId: null, season: null, episode: null, seasons: [] };
-      // Restore BMC button if scrolled past threshold
       if (window.scrollY > 400) {
         document.getElementById('bmc-hover-btn').classList.add('visible');
       }
@@ -1414,7 +1437,9 @@
       }
       console.log(`[switchMode] Switching to mode: ${newMode}`);
       currentMode = newMode;
-      currentQuery = "";
+      if (newMode !== 'search') {
+        currentQuery = "";
+      }
       currentGenre = "";
       currentYear = "";
       netflixType = newMode === "netflix" ? netflixType : "movie";
@@ -1442,6 +1467,9 @@
       } else if (newMode === "netflix") {
         sectionTitle.textContent = `Trending Netflix ${netflixType === "movie" ? "Movies" : "TV Shows"}`;
         genreFilterForm.style.display = 'flex';
+      } else if (newMode === "search") {
+        sectionTitle.textContent = `Search Results for "${currentQuery}"`;
+        genreFilterForm.style.display = 'flex';
       } else {
         sectionTitle.textContent = "Trending Movies";
         genreFilterForm.style.display = 'flex';
@@ -1466,7 +1494,9 @@
       fetchGenres();
       populateYearFilter();
 
-      // Show/hide back-to-top and BMC buttons on scroll
+      const isTablet = window.matchMedia("(min-width: 768px) and (max-width: 1199.98px)").matches;
+      movieList.style.minHeight = isTablet ? '150vh' : '100vh';
+
       window.addEventListener('scroll', () => {
         if (window.scrollY > 400) {
           document.getElementById('back-to-top').classList.add('visible');
@@ -1479,7 +1509,6 @@
         }
       });
 
-      // Link BMC button to Buy Me a Coffee URL
       bmcHoverBtn.addEventListener('click', () => {
         window.open('https://www.buymeacoffee.com/MovieDckWFPH', '_blank', 'noopener');
         console.log('Buy Me a Coffee hover button clicked');
@@ -1518,64 +1547,100 @@
       document.getElementById('nav-netflix').onclick = function (e) {
         e.preventDefault();
         console.log('[nav-netflix] Clicked');
+        let nav = document.getElementById('nav-netflix').parentNode;
+        if (!document.getElementById("netflix-switcher")) {
+          let switcher = document.createElement("div");
+          switcher.id = "netflix-switcher";
+          switcher.style = "margin-top: 6px; margin-bottom: 2px;";
+          switcher.innerHTML = `<button id="netflix-movie-btn" class="btn btn-danger btn-sm" style="margin-right: 7px;">Movies</button>
+            <button id="netflix-tv-btn" class="btn btn-danger btn-sm">TV Shows</button>`;
+          nav.appendChild(switcher);
+          document.getElementById("netflix-movie-btn").onclick = function () {
+            netflixType = "movie";
+            switchModeDebounced('netflix');
+          };
+          document.getElementById("netflix-tv-btn").onclick = function () {
+            netflixType = "tv";
+            switchModeDebounced('netflix');
+          };
+        }
         switchModeDebounced('netflix');
       };
 
-      // Handle search form submission
-      document.getElementById('movie-search-form').addEventListener('submit', function (e) {
+      // Search form handling with debounce
+      document.getElementById('movie-search-form').onsubmit = debounce(function (e) {
         e.preventDefault();
         const query = document.getElementById('movie-search-input').value.trim();
-        if (!query) return;
+        if (!query) {
+          movieList.innerHTML = `<div class="empty-state">Please enter a search query.</div>`;
+          return;
+        }
+        console.log('[movie-search-form] Search query:', query);
         currentQuery = query;
-        currentMode = 'search';
-        setActiveNav('search');
-        document.getElementById('section-title').textContent = `Search Results for "${query}"`;
-        document.getElementById('genre-filter-form').style.display = 'flex';
-        populateGenreFilter();
-        resetInfiniteScroll();
-      });
+        currentGenre = "";
+        currentYear = "";
+        document.getElementById('genre-filter').value = "";
+        document.getElementById('year-filter').value = "";
+        switchModeDebounced('search');
+      }, 300);
 
-      // Handle genre and year filter changes
-      document.getElementById('genre-filter').addEventListener('change', function () {
+      // Handle browser's default clear button or manual clear
+      document.getElementById('movie-search-input').oninput = function () {
+        if (!this.value.trim()) {
+          console.log('[movie-search-input] Input cleared, resetting to popular');
+          currentQuery = '';
+          switchModeDebounced('popular');
+        }
+      };
+
+      // Genre and year filter handling
+      document.getElementById('genre-filter').onchange = function () {
         currentGenre = this.value;
+        console.log('[genre-filter] Changed to:', currentGenre);
         resetInfiniteScroll();
-      });
-      document.getElementById('year-filter').addEventListener('change', function () {
+      };
+      document.getElementById('year-filter').onchange = function () {
         currentYear = this.value;
+        console.log('[year-filter] Changed to:', currentYear);
         resetInfiniteScroll();
-      });
-      document.getElementById('clear-genre-btn').addEventListener('click', function () {
-        currentGenre = '';
-        currentYear = '';
-        document.getElementById('genre-filter').value = '';
-        document.getElementById('year-filter').value = '';
+      };
+      document.getElementById('clear-genre-btn').onclick = function () {
+        currentGenre = "";
+        currentYear = "";
+        document.getElementById('genre-filter').value = "";
+        document.getElementById('year-filter').value = "";
+        console.log('[clear-genre-btn] Cleared filters');
         resetInfiniteScroll();
-      });
+      };
 
-      // Infinite scroll observer
-      const observer = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && !isLoading && !reachedEnd && currentMode !== 'favorites') {
+      // Infinite scroll event listener
+      window.addEventListener('scroll', throttle(() => {
+        if (currentMode === 'favorites') return;
+        const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+        if (scrollTop + clientHeight >= scrollHeight - 300 && !isLoading && !reachedEnd) {
           loadMoreMovies();
         }
-      }, { threshold: 0.1 });
-      observer.observe(infiniteLoader);
+      }, 200));
 
-      // Initialize
-      renderRecentlyViewed();
-      switchMode('popular');
-
-      // Modal close on click outside
-      document.getElementById('modal').addEventListener('click', function (e) {
-        if (e.target === this) closeModal();
-      });
-
-      // Keyboard accessibility for modal close
-      document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && document.getElementById('modal').style.display === 'flex') {
-          closeModal();
+      // Add touchend for tablets/mobile
+      window.addEventListener('touchend', () => {
+        if (currentMode === 'favorites') return;
+        const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+        if (scrollTop + clientHeight >= scrollHeight - 300 && !isLoading && !reachedEnd) {
+          console.log('[touchend] Triggering loadMoreMovies');
+          loadMoreMovies();
         }
       });
+
+      // Initial load
+      renderRecentlyViewed();
+      resetInfiniteScroll();
     });
+
+    // Modal close on outside click
+    document.getElementById('modal').onclick = function (e) {
+      if (e.target === this) closeModal();
+    };
   </script>
 </body>
 </html>
