@@ -459,11 +459,6 @@
       width: 120px;
     }
 
-    #genre-filter:disabled, #year-filter:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
     #clear-genre-btn {
       background: #1976d2;
       color: #fff;
@@ -506,7 +501,6 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 100;
       opacity: 0;
       visibility: hidden;
       transition: opacity 0.3s, visibility 0.3s, background 0.2s, transform 0.2s;
@@ -515,18 +509,20 @@
     #back-to-top {
       bottom: 30px;
       right: 30px;
+      z-index: 100;
     }
 
     #bmc-hover-btn {
-      bottom: 90px;
+      bottom: 100px;
       left: 50%;
       transform: translateX(-50%);
+      z-index: 99;
     }
 
     #back-to-top:hover, #back-to-top:focus,
     #bmc-hover-btn:hover, #bmc-hover-btn:focus {
       background: #2196f3;
-      transform: scale(1.1);
+      transform: translateX(-50%) scale(1.1);
     }
 
     #back-to-top.visible, #bmc-hover-btn.visible {
@@ -544,6 +540,13 @@
       .bmc-button {
         height: 36px !important;
         width: 130px !important;
+      }
+      #bmc-hover-btn {
+        bottom: 90px;
+      }
+      #back-to-top {
+        bottom: 20px;
+        right: 20px;
       }
     }
 
@@ -682,8 +685,8 @@
     </div>
     <div class="row mb-4">
       <form class="genre-filter-form" id="genre-filter-form">
-        <select id="genre-filter" aria-label="Filter by genre" role="listbox" disabled>
-          <option value="" id="genre-all">Loading genres...</option>
+        <select id="genre-filter" aria-label="Filter by genre" role="listbox">
+          <option value="" id="genre-all">All Genres</option>
         </select>
         <select id="year-filter" aria-label="Filter by year" role="listbox">
           <option value="" id="year-all">All Years</option>
@@ -1429,12 +1432,12 @@
       handleFullscreenOrientation(movieIframe);
       handleFullscreenOrientation(tvIframe);
 
+      // Load genres asynchronously but allow search immediately
       const { movieGenres, tvGenres } = await fetchGenres();
       window.movieGenres = movieGenres;
       window.tvGenres = tvGenres;
       populateGenreFilter();
       populateYearFilter();
-      document.getElementById('genre-filter').disabled = false;
 
       renderRecentlyViewed();
       resetInfiniteScroll();
@@ -1484,7 +1487,7 @@
         switchModeDebounced('netflix');
       });
 
-      document.getElementById('movie-search-form').addEventListener('submit', debounce((e) => {
+      document.getElementById('movie-search-form').addEventListener('submit', (e) => {
         e.preventDefault();
         const query = document.getElementById('movie-search-input').value.trim();
         if (!query) {
@@ -1496,13 +1499,13 @@
         currentYear = '';
         document.getElementById('genre-filter').value = '';
         document.getElementById('year-filter').value = '';
-        switchModeDebounced('search');
-      }, 300));
+        switchMode('search');
+      });
 
       document.getElementById('movie-search-input').addEventListener('input', () => {
         if (!document.getElementById('movie-search-input').value.trim()) {
           currentQuery = '';
-          switchModeDebounced('popular');
+          switchMode('popular');
         }
       });
 
