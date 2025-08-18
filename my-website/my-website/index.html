@@ -1029,7 +1029,7 @@
         return [];
       } finally {
         genreFilter.disabled = false;
-        document.getElementById('year-filter').disabled = false;
+        document.getElementById('rectified='year-filter').disabled = false;
       }
     }
     function renderMovies(items, clear = false) {
@@ -1255,7 +1255,9 @@
         return g.name ? `<span class="chip">${g.name}</span>` : '';
       }).join(' ');
       document.getElementById('tv-modal-air-date').textContent = show.first_air_date || 'N/A';
-      document.getElementById('tv-modal-total-seasons').textContent = show.number_of_seasons || 'N/A';
+      document.getElementById('tv-modal-total-seasons').text семьи
+
+Content: content = show.number_of_seasons || 'N/A';
       const favoriteBtn = document.getElementById('tv-favorite-btn');
       favoriteBtn.classList.toggle('favorited', isFavorite(show.id, 'tv'));
       favoriteBtn.onclick = () => toggleFavorite(show.id, 'tv');
@@ -1524,70 +1526,21 @@
           document.getElementById("netflix-movie-btn").onclick = function (ev) {
             ev.preventDefault();
             console.log('[netflix-movie-btn] Click');
-        netflixType = "movie";
-        switchModeDebounced('netflix');
+            netflixType = "movie";
+            switchModeDebounced('netflix');
+          };
+          document.getElementById("netflix-tv-btn").onclick = function (ev) {
+            ev.preventDefault();
+            console.log('[netflix-tv-btn] Click');
+            netflixType = "tv";
+            switchModeDebounced('netflix');
+          };
+        } else {
+          switchModeDebounced('netflix');
+        }
       };
-      document.getElementById("netflix-tv-btn").onclick = function (ev) {
-        ev.preventDefault();
-        console.log('[netflix-tv-btn] Click');
-        netflixType = "tv";
-        switchModeDebounced('netflix');
-      };
-    } else {
-      switchModeDebounced('netflix');
-    }
-  };
 
-  // Search form submission
-  document.getElementById('movie-search-form').onsubmit = function (e) {
-    e.preventDefault();
-    const query = document.getElementById('movie-search-input').value.trim();
-    if (!query) return;
-    console.log('[movie-search-form] Search query:', query);
-    currentQuery = query;
-    switchModeDebounced('search');
-  };
-
-  // Genre filter change
-  document.getElementById('genre-filter').onchange = function () {
-    currentGenre = this.value;
-    console.log('[genre-filter] Changed to genre:', currentGenre);
-    resetInfiniteScroll();
-  };
-
-  // Year filter change
-  document.getElementById('year-filter').onchange = function () {
-    currentYear = this.value;
-    console.log('[year-filter] Changed to year:', currentYear);
-    resetInfiniteScroll();
-  };
-
-  // Clear genre/year filter
-  document.getElementById('clear-genre-btn').onclick = function () {
-    console.log('[clear-genre-btn] Clearing filters');
-    currentGenre = "";
-    currentYear = "";
-    document.getElementById('genre-filter').value = "";
-    document.getElementById('year-filter').value = "";
-    resetInfiniteScroll();
-  };
-
-  // Infinite scroll
-  const handleScroll = throttle(() => {
-    if (currentMode === 'favorites') return;
-    const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
-    if (scrollTop + clientHeight >= scrollHeight - 300 && !isLoading && !reachedEnd) {
-      console.log('[handleScroll] Triggering loadMoreMovies');
-      loadMoreMovies();
-    }
-  }, 300);
-  window.addEventListener('scroll', handleScroll);
-
-  // Initial load
-  console.log('[DOMContentLoaded] Initializing with mode:', currentMode);
-  renderRecentlyViewed();
-  switchMode(currentMode);
-});
-  </script>
-</body>
-</html>k
+      // Search form submission
+      document.getElementById('movie-search-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const query = document.getElementById('movie-search-input
