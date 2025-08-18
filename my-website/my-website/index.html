@@ -488,8 +488,8 @@
       100% { transform: rotate(360deg); }
     }
 
-    /* Back to Top and BMC */
-    #back-to-top, #bmc-hover-btn {
+    /* Back to Top */
+    #back-to-top {
       position: fixed;
       background: #1976d2;
       color: #fff;
@@ -504,49 +504,25 @@
       opacity: 0;
       visibility: hidden;
       transition: opacity 0.3s, visibility 0.3s, background 0.2s, transform 0.2s;
-    }
-
-    #back-to-top {
-      bottom: 30px;
-      right: 30px;
+      bottom: 20px;
+      right: 10px;
       z-index: 100;
     }
 
-    #bmc-hover-btn {
-      bottom: 30px;
-      left: 30px;
-      z-index: 99;
-    }
-
-    #back-to-top:hover, #back-to-top:focus,
-    #bmc-hover-btn:hover, #bmc-hover-btn:focus {
+    #back-to-top:hover, #back-to-top:focus {
       background: #2196f3;
       transform: scale(1.1);
     }
 
-    #back-to-top.visible, #bmc-hover-btn.visible {
+    #back-to-top.visible {
       opacity: 0.9;
       visibility: visible;
     }
 
-    .bmc-button {
-      height: 40px !important;
-      width: 145px !important;
-      transition: transform 0.2s, opacity 0.2s;
-    }
-
     @media (max-width: 767.98px) {
-      .bmc-button {
-        height: 36px !important;
-        width: 130px !important;
-      }
-      #bmc-hover-btn {
-        bottom: 20px;
-        left: 20px;
-      }
       #back-to-top {
-        bottom: 20px;
-        right: 20px;
+        bottom: 15px;
+        right: 5px;
       }
     }
 
@@ -701,12 +677,9 @@
     </div>
   </main>
 
-  <!-- Back to Top and BMC -->
+  <!-- Back to Top -->
   <button id="back-to-top" title="Back to Top" aria-label="Back to Top">
     <i class="fas fa-arrow-up"></i>
-  </button>
-  <button id="bmc-hover-btn" title="Support us on Buy Me a Coffee" aria-label="Support us on Buy Me a Coffee">
-    <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee" class="bmc-button">
   </button>
 
   <!-- Footer -->
@@ -919,7 +892,6 @@
       movieContent.style.display = 'block';
       tvContent.style.display = 'none';
       modal.style.display = 'flex';
-      document.getElementById('bmc-hover-btn').classList.remove('visible');
       lastModalMovie = movie;
       addRecentlyViewed(movie);
       renderRecentlyViewed();
@@ -982,7 +954,6 @@
       movieContent.style.display = 'none';
       tvContent.style.display = 'block';
       modal.style.display = 'flex';
-      document.getElementById('bmc-hover-btn').classList.remove('visible');
       tvModalData = { tvId: show.id, season: null, episode: null, seasons: [] };
       addRecentlyViewed(show);
       renderRecentlyViewed();
@@ -1043,7 +1014,7 @@
       lastModalMovie = null;
       tvModalData = { tvId: null, season: null, episode: null, seasons: [] };
       if (window.scrollY > 400) {
-        document.getElementById('bmc-hover-btn').classList.add('visible');
+        document.getElementById('back-to-top').classList.add('visible');
       }
     }
 
@@ -1125,7 +1096,6 @@
     async function playEpisode(showId, season, episode) {
       tvModalData.season = season;
       tvModalData.episode = episode;
-      document.getElementById('bmc-hover-btn').classList.remove('visible');
       const iframe = document.getElementById('tv-episode-player');
       const playOverlay = iframe.parentElement.querySelector('.iframe-play-overlay');
       const server = document.getElementById('server').value;
@@ -1212,7 +1182,7 @@
     function renderMovies(items, movieList, clear = false) {
       if (clear) movieList.innerHTML = '';
       if (!items || !items.length) {
-        movieList.innerHTML = `<div class="empty-state">No items found for "${currentQuery || 'this category'}"${currentGenre ? ` in genre ${currentGenre}` : ''}${currentYear ? ` from ${currentYear}` : ''}.</div>`;
+        movieList.innerHTML = `<div class="empty-state">No items found for "${currentQuery || 'this category'}"${currentGenre ? ` in genre ${currentGenre}` : ''}${現在の年 ? ` from ${currentYear}` : ''}.</div>`;
         return;
       }
       const fragment = document.createDocumentFragment();
@@ -1546,15 +1516,10 @@
       });
 
       window.addEventListener('scroll', throttle(() => {
-        const bmcHoverBtn = document.getElementById('bmc-hover-btn');
         if (window.scrollY > 400) {
           document.getElementById('back-to-top').classList.add('visible');
-          if (document.getElementById('modal').style.display !== 'flex') {
-            bmcHoverBtn.classList.add('visible');
-          }
         } else {
           document.getElementById('back-to-top').classList.remove('visible');
-          bmcHoverBtn.classList.remove('visible');
         }
         if (currentMode === 'favorites') return;
         const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
@@ -1573,10 +1538,6 @@
 
       document.getElementById('back-to-top').addEventListener('click', () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
-      });
-
-      document.getElementById('bmc-hover-btn').addEventListener('click', () => {
-        window.open('https://www.buymeacoffee.com/MovieDckWFPH', '_blank', 'noopener');
       });
     });
   </script>
