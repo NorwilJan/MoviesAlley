@@ -1543,4 +1543,74 @@ Content: content = show.number_of_seasons || 'N/A';
       // Search form submission
       document.getElementById('movie-search-form').addEventListener('submit', function (e) {
         e.preventDefault();
-        const query = document.getElementById('movie-search-input
+        const query = document.getElementById('movie-search-input').value.trim();
+        if (!query) {
+          console.log('[movie-search-form] Empty query, aborting search');
+          movieList.innerHTML = '<div class="empty-state">Please enter a search query.</div>';
+          return;
+        }
+        console.log('[movie-search-form] Search query:', query);
+        currentQuery = query;
+        currentMode = 'search';
+        setActiveNav('search');
+        document.getElementById('section-title').textContent = `Search Results for "${query}"`;
+        genreFilter.value = '';
+        document.getElementById('year-filter').value = '';
+        currentGenre = '';
+        currentYear = '';
+        populateGenreFilter();
+        resetInfiniteScroll();
+      });
+
+      // Genre and year filter
+      genreFilter.onchange = function () {
+        currentGenre = genreFilter.value;
+        console.log('[genre-filter] Changed to genre:', currentGenre);
+        if (currentMode === "favorites") {
+          renderFavorites();
+        } else {
+          resetInfiniteScroll();
+        }
+      };
+      document.getElementById('year-filter').onchange = function () {
+        currentYear = document.getElementById('year-filter').value;
+        console.log('[year-filter] Changed to year:', currentYear);
+        if (currentMode === "favorites") {
+          renderFavorites();
+        } else {
+          resetInfiniteScroll();
+        }
+      };
+      document.getElementById('clear-genre-btn').onclick = function () {
+        console.log('[clear-genre-btn] Clearing filters');
+        genreFilter.value = '';
+        document.getElementById('year-filter').value = '';
+        currentGenre = '';
+        currentYear = '';
+        if (currentMode === "favorites") {
+          renderFavorites();
+        } else {
+          resetInfiniteScroll();
+        }
+      };
+
+      // Infinite scroll handler
+      window.addEventListener('scroll', throttle(() => {
+        if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200 && !isLoading && !reachedEnd) {
+          console.log('[scroll] Triggering loadMoreMovies');
+          loadMoreMovies();
+        }
+      }, 300));
+
+      // Close modal on outside click
+      document.getElementById('modal').onclick = function (e) {
+        if (e.target === this) closeModal();
+      };
+
+      // Initial load
+      resetInfiniteScroll();
+      renderRecentlyViewed();
+    });
+  </script>
+</body>
+</html>
