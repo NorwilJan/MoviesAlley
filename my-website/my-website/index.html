@@ -110,6 +110,7 @@
       border-radius: 6px;
       display: block;
       width: 100%;
+      cursor: pointer;
     }
     .movie-poster-wrapper:focus-within .movie-poster-img,
     .movie-poster-wrapper:hover .movie-poster-img:not(:hover) {
@@ -132,6 +133,7 @@
     .movie-poster-wrapper:focus-within {
       transform: translateY(-2px) scale(1.02);
       z-index: 1;
+      outline: none;
     }
     .movie-poster-wrapper:focus-visible {
       outline: 2px solid var(--color-primary);
@@ -156,25 +158,23 @@
       opacity: 0.95;
       box-shadow: 0 2px 12px var(--color-primary-light, #1976d299);
       transition: background 0.2s, box-shadow 0.2s, transform 0.13s;
-    }
-    .play-btn-centered:hover,
-    .play-btn-centered:focus {
-      background: var(--color-primary-light) !important;
-      box-shadow: 0 4px 18px var(--color-primary), 0 1px 4px #222;
-      transform: translate(-50%, -50%) scale(1.08);
-      color: #fff !important;
-      outline: none;
+      pointer-events: none;
+      user-select: none;
     }
     .favorite-btn,
     #modal-content-tv .favorite-btn {
       background: transparent;
       border: none;
+      position: absolute;
+      top: 8px;
+      right: 12px;
       font-size: 1.4em;
       color: var(--color-text) !important;
       cursor: pointer;
       transition: color 0.15s, text-shadow 0.13s;
       outline: none;
       z-index: 4;
+      user-select: none;
     }
     .favorite-btn.favorited,
     #modal-content-tv .favorite-btn.favorited {
@@ -250,6 +250,7 @@
       flex-direction: column;
       align-items: center;
       position: relative;
+      user-select: none;
     }
     @media (min-width: 1200px) {
       .movie-col {
@@ -1296,7 +1297,7 @@
             <button class="favorite-btn" data-id="${item.id}" data-type="${mediaType}" aria-label="Toggle favorite status">
               <i class="fas fa-heart ${isFavorite(item.id, mediaType) ? "favorited" : ""}"></i>
             </button>
-            <button class="play-btn-centered" aria-label="Play trailer or details">
+            <button class="play-btn-centered" aria-hidden="true" tabindex="-1">
               <i class="fas fa-play"></i>
             </button>
           </div>
@@ -1315,9 +1316,12 @@
         `;
         // Click and keyboard handling for details modal
         const wrapper = movieDiv.querySelector(".movie-poster-wrapper");
-        wrapper.onclick = () => {
+        wrapper.onclick = (e) => {
+          // Prevent clicks on favorite button bubbling here
+          if (e.target.closest(".favorite-btn")) return;
           if (isTv) showTvDetails(item);
           else showDetails(item);
+          lastModalMovie = wrapper;
         };
         wrapper.onkeydown = (e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -1325,7 +1329,6 @@
             wrapper.click();
           }
         };
-        // Favorite toggle via event delegation will be added globally
 
         fragment.appendChild(movieDiv);
       });
@@ -1336,6 +1339,7 @@
     document.body.addEventListener("click", (e) => {
       const favBtn = e.target.closest(".favorite-btn");
       if (favBtn) {
+        e.stopPropagation();
         const id = parseInt(favBtn.getAttribute("data-id"));
         const type = favBtn.getAttribute("data-type");
         toggleFavorite(id, type);
@@ -1393,7 +1397,7 @@
     function closeModal() {
       modal.setAttribute("aria-hidden", "true");
       modal.style.display = "none";
-      lastModalMovie?.focus();
+      if (lastModalMovie) lastModalMovie.focus();
     }
 
     // Back to top button behavior
@@ -1417,11 +1421,114 @@
       fetchGenres();
       populateYearFilter();
       renderRecentlyViewed();
+      loadInitialMovies();
+      setupUIHandlers();
     });
 
-    // Your showDetails and showTvDetails must set lastModalMovie = the focused element that triggers modal
+    async function loadInitialMovies() {
+      currentPage = 1;
+      loadedPages.clear();
+      const movies = await fetchMoviesInf(currentPage);
+      renderMovies(movies, true);
+    }
+    // Setup UI interactions & filters
+    function setupUIHandlers() {
+      // Search form
+      const searchForm = document.getElementById("movie-search-form");
+      searchForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        currentQuery = document.getElementById("movie-search-input").value.trim();
+        currentMode = currentQuery ? "search" : "popular";
+        currentPage = 1;
+        loadedPages.clear();
+        const movies = await fetchMoviesInf(currentPage);
+        renderMovies(movies, true);
+      });
 
-    // Other existing JS or functions remain unchanged as per your original script
+      // Genre filter
+      genreFilter.addEventListener("change", async () => {
+        currentGenre = genreFilter.value;
+        currentPage = 1;
+        loadedPages.clear();
+        const movies = await fetchMoviesInf(currentPage);
+        renderMovies(movies, true);
+      });
+
+      // Year filter
+      document.getElementById("year-filter").addEventListener("change", async (e) => {
+        currentYear = e.target.value;
+        currentPage = 1;
+        loadedPages.clear();
+        const movies = await fetchMoviesInf(currentPage);
+        renderMovies(movies, true);
+      });
+
+      // Clear filter button
+      document.getElementById("clear-genre-btn").addEventListener("click", async () => {
+        currentGenre = "";
+        currentYear = "";
+        document.getElementById("genre-filter").value = "";
+        document.getElementById("year-filter").value = "";
+        currentPage = 1;
+        loadedPages.clear();
+        const movies = await fetchMoviesInf(currentPage);
+        renderMovies(movies, true);
+      });
+
+      // Infinite scroll
+      window.addEventListener(
+        "scroll",
+        throttle(async () => {
+          if (
+            window.innerHeight + window.scrollY >=
+              document.body.offsetHeight - 500 &&
+            !isLoading &&
+            !reachedEnd &&
+            currentMode !== "favorites"
+          ) {
+            if (currentPage < totalPages) {
+              isLoading = true;
+              currentPage++;
+              const movies = await fetchMoviesInf(currentPage);
+              if (movies.length === 0) {
+                reachedEnd = true;
+              } else {
+                renderMovies(movies);
+              }
+              isLoading = false;
+            }
+          }
+        }, 200)
+      );
+    }
+
+    // Stubs for missing functions from your old code to avoid errors
+    function showDetails(data) {
+      // Populate modal content movie with data, then open modal
+      const modal = document.getElementById("modal");
+      const modalContentMovie = document.getElementById("modal-content-movie");
+      document.getElementById("modal-title").textContent = data.title || "";
+      document.getElementById("modal-image").src = data.poster_path
+        ? imageBaseUrl + data.poster_path
+        : "img/no-poster.png";
+      document.getElementById("modal-description").textContent = data.overview || "";
+      // Add other fields as needed...
+      openModal("movie");
+      lastModalMovie = null; // Will be set on click wrapper
+    }
+    function showTvDetails(data) {
+      // Populate modal content tv with data, then open modal
+      const modal = document.getElementById("modal");
+      const modalContentTv = document.getElementById("modal-content-tv");
+      document.getElementById("tv-modal-title").textContent = data.name || "";
+      document.getElementById("tv-modal-image").src = data.poster_path
+        ? imageBaseUrl + data.poster_path
+        : "img/no-poster.png";
+      document.getElementById("tv-modal-description").textContent = data.overview || "";
+      // Add other fields as needed...
+      openModal("tv");
+      lastModalMovie = null; // Will be set on click wrapper
+    }
   </script>
 </body>
 </html>
