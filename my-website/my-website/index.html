@@ -866,6 +866,7 @@
 
     // Fetch genres
     async function fetchGenres() {
+      console.log('[fetchGenres] Fetching genres');
       try {
         const [movieRes, tvRes] = await Promise.all([
           fetch(`https://api.themoviedb.org/3/genre/movie/list?api_key=${apiKey}`),
@@ -876,10 +877,11 @@
         const tvData = await tvRes.json();
         movieGenres = movieData.genres || [];
         tvGenres = tvData.genres || [];
+        console.log('[fetchGenres] Genres loaded:', movieGenres, tvGenres);
         populateGenreFilter();
         genreFilter.disabled = false;
       } catch (e) {
-        console.error('Error fetching genres:', e);
+        console.error('[fetchGenres] Error:', e);
         genreFilter.innerHTML = '<option value="" id="genre-all">Failed to load genres</option>';
         genreFilter.disabled = false;
       }
@@ -887,6 +889,7 @@
 
     // Populate genre filter dropdown
     function populateGenreFilter() {
+      console.log('[populateGenreFilter] Populating genres for mode:', currentMode);
       genreFilter.innerHTML = '<option value="" id="genre-all">All Genres</option>';
       let genres = [];
       if (currentMode === "tv") {
@@ -908,11 +911,13 @@
         genreFilter.appendChild(option);
       });
       genreFilter.value = currentGenre || "";
-      genreFilter.setAttribute('aria-activedescendant', genreFilter.options[genreFilter.selectedIndex].id || '');
+      genreFilter.setAttribute('aria-activedescendant', genreFilter.options[genreFilter.selectedIndex]?.id || '');
+      console.log('[populateGenreFilter] Genre filter set to:', genreFilter.value);
     }
 
     // Populate year filter dropdown
     function populateYearFilter() {
+      console.log('[populateYearFilter] Populating years');
       const yearFilter = document.getElementById('year-filter');
       yearFilter.innerHTML = '<option value="" id="year-all">All Years</option>';
       const currentYearNum = new Date().getFullYear();
@@ -924,7 +929,8 @@
         yearFilter.appendChild(option);
       }
       yearFilter.value = currentYear || "";
-      yearFilter.setAttribute('aria-activedescendant', yearFilter.options[yearFilter.selectedIndex].id || '');
+      yearFilter.setAttribute('aria-activedescendant', yearFilter.options[yearFilter.selectedIndex]?.id || '');
+      console.log('[populateYearFilter] Year filter set to:', yearFilter.value);
     }
 
     // FAVORITES/RECENTLY VIEWED
@@ -932,6 +938,7 @@
       return favorites.some(f => f.id === id && f.media_type === media_type);
     }
     function toggleFavorite(id, media_type) {
+      console.log('[toggleFavorite] Toggling favorite:', id, media_type);
       if (isFavorite(id, media_type)) {
         favorites = favorites.filter(f => f.id !== id || f.media_type !== media_type);
       } else {
@@ -952,7 +959,7 @@
       }
     }
     function renderFavorites() {
-      console.log('[renderFavorites] Rendering favorites');
+      console.log('[renderFavorites] Rendering favorites:', favorites);
       if (!favorites.length) {
         movieList.innerHTML = `<div class="empty-state">You have no favorite movies or TV shows yet ❤️.</div>`;
         return;
@@ -976,6 +983,7 @@
             return year === currentYear;
           });
         }
+        console.log('[renderFavorites] Filtered items:', filteredItems);
         renderMovies(filteredItems, true);
       }).catch(err => {
         console.error('[renderFavorites] Error:', err);
@@ -984,6 +992,7 @@
     }
     let recentlyViewed = JSON.parse(localStorage.getItem("recently_viewed") || "[]");
     function addRecentlyViewed(item) {
+      console.log('[addRecentlyViewed] Adding:', item.title || item.name);
       const isTv = !!item.name && !item.title || item.media_type === 'tv';
       recentlyViewed = recentlyViewed.filter(m => m.id !== item.id || m.media_type !== (isTv ? 'tv' : 'movie'));
       recentlyViewed.unshift({
@@ -998,6 +1007,7 @@
       renderRecentlyViewed();
     }
     function renderRecentlyViewed() {
+      console.log('[renderRecentlyViewed] Rendering:', recentlyViewed);
       const section = document.getElementById("recently-viewed-section");
       const list = document.getElementById("recently-viewed-list");
       if (!recentlyViewed.length) {
@@ -1010,7 +1020,7 @@
         const div = document.createElement("div");
         div.className = "movie-col";
         div.innerHTML = `
-          <div class="movie-poster-wrapper" tabindex="0" role="button" aria-label="View ${item.title}">
+          <div class="movie-poster-wrapper" tabindex="0" role="button" aria-label="View ${sanitizeHTML(item.title)}">
             <picture>
               <source srcset="${item.poster_path ? imageBaseUrl + item.poster_path + '?format=webp' : 'img/no-poster.png'}" type="image/webp">
               <img loading="lazy" src="${item.poster_path ? imageBaseUrl + item.poster_path : 'img/no-poster.png'}" alt="Poster for ${sanitizeHTML(item.title)}" class="img-fluid movie-poster-img">
@@ -1071,17 +1081,23 @@
           movieList.innerHTML = `<div class="empty-state">Please enter a search query.</div>`;
           return [];
         }
+        console.log('[fetchMoviesInf] Fetching URL:', url);
         const response = await fetch(url);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
-        if (!data.results || data.results.length === 0) {
+        if (!data || !Array.isArray(data.results)) {
+          console.error('[fetchMoviesInf] Invalid API response:', data);
+          movieList.innerHTML = `<div class="error-state">Invalid data received from server. Please try again later.</div>`;
+          return [];
+        }
+        if (data.results.length === 0) {
           console.log(`[fetchMoviesInf] No results for page ${page}`);
           movieList.innerHTML = `<div class="empty-state">No items found for "${sanitizeHTML(currentQuery) || 'this category'}"${currentGenre ? ` in genre ${currentGenre}` : ''}${currentYear ? ` from ${currentYear}` : ''}.</div>`;
           return [];
         }
         totalPages = Math.min(data.total_pages || 1, maxPages);
         loadedPages.add(page);
-        console.log(`[fetchMoviesInf] Fetched ${data.results.length} items for page ${page}`);
+        console.log(`[fetchMoviesInf] Fetched ${data.results.length} items for page ${page}, totalPages: ${totalPages}`);
         return data.results.slice(0, perPage);
       } catch (e) {
         console.error('[fetchMoviesInf] Error:', e);
@@ -1093,11 +1109,18 @@
         document.getElementById('year-filter').disabled = false;
       }
     }
+
     function renderMovies(items, clear = false) {
-      console.log(`[renderMovies] Rendering ${items.length} items, clear=${clear}`, items);
-      if (clear) movieList.innerHTML = '';
+      console.log(`[renderMovies] Rendering ${items.length} items, clear=${clear}`);
+      if (clear) {
+        movieList.innerHTML = '';
+        categoryItems = [];
+      }
       if (!items || items.length === 0) {
-        if (clear) movieList.innerHTML = `<div class="empty-state">No items found for "${sanitizeHTML(currentQuery) || 'this category'}"${currentGenre ? ` in genre ${currentGenre}` : ''}${currentYear ? ` from ${currentYear}` : ''}.</div>`;
+        console.log('[renderMovies] No items to render');
+        if (clear) {
+          movieList.innerHTML = `<div class="empty-state">No items found for "${sanitizeHTML(currentQuery) || 'this category'}"${currentGenre ? ` in genre ${currentGenre}` : ''}${currentYear ? ` from ${currentYear}` : ''}.</div>`;
+        }
         return;
       }
       const fragment = document.createDocumentFragment();
@@ -1140,46 +1163,45 @@
         fragment.appendChild(movieDiv);
       });
       movieList.appendChild(fragment);
+      console.log('[renderMovies] Appended items to DOM');
     }
 
     // Infinite scroll
     async function loadMoreMovies(clear = false) {
+      console.log(`[loadMoreMovies] isLoading=${isLoading}, reachedEnd=${reachedEnd}, currentPage=${currentPage}, maxPages=${maxPages}, clear=${clear}`);
       if (isLoading || reachedEnd || currentPage > maxPages) {
-        console.log(`[loadMoreMovies] Skipped: isLoading=${isLoading}, reachedEnd=${reachedEnd}, currentPage=${currentPage}, maxPages=${maxPages}`);
+        console.log('[loadMoreMovies] Skipped loading');
+        infiniteLoader.style.display = "none";
         return;
       }
       isLoading = true;
-      console.log(`[loadMoreMovies] Loading page ${currentPage}, clear=${clear}`);
-      if (clear) {
-        movieList.innerHTML = '<div class="loading-state">Loading...</div>';
-        categoryItems = [];
-      }
       infiniteLoader.style.display = "block";
+      movieList.innerHTML = clear ? '<div class="loading-state">Loading...</div>' : movieList.innerHTML;
       const items = await fetchMoviesInf(currentPage);
+      console.log('[loadMoreMovies] Fetched items:', items);
       if (items.length > 0) {
         if (clear) categoryItems = items;
         else categoryItems = [...categoryItems, ...items].slice(0, maxItems);
         renderMovies(items, clear);
         currentPage++;
-        if (currentPage > totalPages) reachedEnd = true;
-        console.log(`[loadMoreMovies] Rendered ${items.length} items, currentPage=${currentPage}, totalPages=${totalPages}`);
+        if (currentPage > totalPages) {
+          reachedEnd = true;
+          console.log('[loadMoreMovies] Reached end of pages');
+        }
       } else {
         reachedEnd = true;
         if (clear && !categoryItems.length) {
-          setTimeout(() => {
-            if (!movieList.innerHTML.includes('movie-col')) {
-              movieList.innerHTML = `<div class="empty-state">No items found for "${sanitizeHTML(currentQuery) || 'this category'}"${currentGenre ? ` in genre ${currentGenre}` : ''}${currentYear ? ` from ${currentYear}` : ''}.</div>`;
-            }
-          }, 500);
+          movieList.innerHTML = `<div class="empty-state">No items found for "${sanitizeHTML(currentQuery) || 'this category'}"${currentGenre ? ` in genre ${currentGenre}` : ''}${currentYear ? ` from ${currentYear}` : ''}.</div>`;
         }
       }
       isLoading = false;
       infiniteLoader.style.display = "none";
+      console.log('[loadMoreMovies] Completed, currentPage:', currentPage);
     }
 
     // Reset infinite scroll
     function resetInfiniteScroll() {
-      console.log('[resetInfiniteScroll] Resetting infinite scroll');
+      console.log('[resetInfiniteScroll] Resetting: mode=', currentMode, 'genre=', currentGenre, 'year=', currentYear);
       currentPage = 1;
       totalPages = 1;
       loadedPages.clear();
@@ -1193,6 +1215,7 @@
 
     // MODAL - MOVIE
     async function showDetails(movie) {
+      console.log('[showDetails] Showing movie:', movie.title);
       const modal = document.getElementById('modal');
       const modalSpinner = document.getElementById('modal-content-movie').querySelector('.modal-spinner');
       modalSpinner.style.display = 'block';
@@ -1262,7 +1285,7 @@
     }
     function getStars(vote) {
       let stars = Math.round((vote || 0) / 2);
-      return '★'.repeat(st Lillioan>★</span>☆'.repeat(5 - stars);
+      return '★'.repeat(stars) + '☆'.repeat(5 - stars);
     }
     function changeServer() {
       if (!lastModalMovie) return;
@@ -1329,6 +1352,7 @@
 
     // MODAL - TV SHOW
     async function showTvDetails(show) {
+      console.log('[showTvDetails] Showing TV show:', show.name);
       const modal = document.getElementById('modal');
       const modalSpinner = document.getElementById('modal-content-tv').querySelector('.modal-spinner');
       modalSpinner.style.display = 'block';
@@ -1402,6 +1426,7 @@
 
     // Play TV episode
     window.playEpisode = async function(showId, season, episode) {
+      console.log('[playEpisode] Playing:', showId, season, episode);
       tvModalData.season = season;
       tvModalData.episode = episode;
       document.getElementById('bmc-hover-btn').classList.remove('visible');
@@ -1438,20 +1463,29 @@
 
     // Update next episode button
     async function updateNextEpisodeButton(showId, season, episode) {
+      console.log('[updateNextEpisodeButton] Updating for:', showId, season, episode);
       const btn = document.getElementById('tv-episode-next-btn');
       try {
         const res = await fetch(`https://api.themoviedb.org/3/tv/${showId}/season/${season}?api_key=${apiKey}`);
-        const data = await res.json();
-        const episodes = data.episodes || [];
-        const nextEpisode = episodes.find(ep => ep.episode_number === episode + 1);
-        if (nextEpisode) {
-          btn.textContent = `Next Episode: ${sanitizeHTML(nextEpisode.name)}`;
-          btn.onclick = () => playEpisode(showId, season, episode + 1);
-        } else if (tvModalData.seasons.some(s => s.season_number === season + 1)) {
-          btn.textContent = `Next Season`;
-          btn.onclick = () => playEpisode(showId, season + 1, 1);
-        } else {
+        const seasonData = await res.json();
+        if (!seasonData.episodes || !seasonData.episodes.length) {
+          console.log('[updateNextEpisodeButton] No episodes found for season:', season);
           btn.style.display = 'none';
+          return;
+        }
+        const nextEpisode = seasonData.episodes.find(ep => ep.episode_number === episode + 1);
+        if (nextEpisode) {
+          btn.onclick = () => playEpisode(showId, season, episode + 1);
+          btn.setAttribute('aria-label', `Play Episode ${episode + 1} of Season ${season}`);
+        } else {
+          const nextSeasonRes = await fetch(`https://api.themoviedb.org/3/tv/${showId}/season/${season + 1}?api_key=${apiKey}`);
+          const nextSeasonData = await nextSeasonRes.json();
+          if (nextSeasonData.episodes && nextSeasonData.episodes.length) {
+            btn.onclick = () => playEpisode(showId, season + 1, 1);
+            btn.setAttribute('aria-label', `Play Episode 1 of Season ${season + 1}`);
+          } else {
+            btn.style.display = 'none';
+          }
         }
       } catch (e) {
         console.error('[updateNextEpisodeButton] Error:', e);
@@ -1477,9 +1511,11 @@
 
     // Close modal
     function closeModal() {
+      console.log('[closeModal] Closing modal');
       const modal = document.getElementById('modal');
       modal.classList.remove('show');
-      setTimeout(() => {modal.style.display = 'none';
+      setTimeout(() => {
+        modal.style.display = 'none';
         document.getElementById('modal-video').src = '';
         document.getElementById('tv-episode-player').src = '';
         document.getElementById('tv-episode-player').style.display = 'none';
@@ -1634,5 +1670,3 @@
     handleFullscreenOrientation(document.getElementById('modal-video'));
     handleFullscreenOrientation(document.getElementById('tv-episode-player'));
   </script>
-</body>
-</html>
