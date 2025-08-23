@@ -1436,8 +1436,6 @@
         return;
       }
       console.log(`[switchMode] Switching to mode: ${newMode}`);
-      // Clear search input on mode switch
-      document.getElementById('movie-search-input').value = '';
       currentMode = newMode;
       if (newMode !== 'search') {
         currentQuery = "";
@@ -1538,86 +1536,111 @@
       };
       document.getElementById('nav-tagalog').onclick = function (e) {
         e.preventDefault();
-        console.log('[nav-tagalog]Clicked');
+        console.log('[nav-tagalog] Clicked');
         switchModeDebounced('tagalog');
-      };
-      document.getElementById('nav-netflix').onclick = function (e) {
-        e.preventDefault();
-        console.log('[nav-netflix] Clicked');
-        switchModeDebounced('netflix');
       };
       document.getElementById('nav-favorites').onclick = function (e) {
         e.preventDefault();
         console.log('[nav-favorites] Clicked');
         switchModeDebounced('favorites');
       };
+      document.getElementById('nav-netflix').onclick = function (e) {
+        e.preventDefault();
+        console.log('[nav-netflix] Clicked');
+        let nav = document.getElementById('nav-netflix').parentNode;
+        if (!document.getElementById("netflix-switcher")) {
+          let switcher = document.createElement("div");
+          switcher.id = "netflix-switcher";
+          switcher.style = "margin-top: 6px; margin-bottom: 2px;";
+          switcher.innerHTML = `<button id="netflix-movie-btn" class="btn btn-danger btn-sm" style="margin-right: 7px;">Movies</button>
+            <button id="netflix-tv-btn" class="btn btn-danger btn-sm">TV Shows</button>`;
+          nav.appendChild(switcher);
+          document.getElementById("netflix-movie-btn").onclick = function () {
+            netflixType = "movie";
+            switchModeDebounced('netflix');
+          };
+          document.getElementById("netflix-tv-btn").onclick = function () {
+            netflixType = "tv";
+            switchModeDebounced('netflix');
+          };
+        }
+        switchModeDebounced('netflix');
+      };
 
-      // Fix for search bar: Handle search form submission
-      document.getElementById('movie-search-form').onsubmit = function (e) {
+      // Search form handling with debounce
+      document.getElementById('movie-search-form').onsubmit = debounce(function (e) {
         e.preventDefault();
         const query = document.getElementById('movie-search-input').value.trim();
-        console.log('[movie-search-form] Submitted with query:', query);
-        if (query) {
-          currentQuery = query;
-          switchModeDebounced('search');
-        } else {
+        if (!query) {
           movieList.innerHTML = `<div class="empty-state">Please enter a search query.</div>`;
-          infiniteLoader.style.display = 'none';
+          return;
+        }
+        console.log('[movie-search-form] Search query:', query);
+        currentQuery = query;
+        currentGenre = "";
+        currentYear = "";
+        document.getElementById('genre-filter').value = "";
+        document.getElementById('year-filter').value = "";
+        switchModeDebounced('search');
+      }, 300);
+
+      // Handle browser's default clear button or manual clear
+      document.getElementById('movie-search-input').oninput = function () {
+        if (!this.value.trim()) {
+          console.log('[movie-search-input] Input cleared, resetting to popular');
+          currentQuery = '';
+          switchModeDebounced('popular');
         }
       };
 
-      // Handle genre and year filter changes
-      genreFilter.addEventListener('change', function () {
+      // Genre and year filter handling
+      document.getElementById('genre-filter').onchange = function () {
         currentGenre = this.value;
         console.log('[genre-filter] Changed to:', currentGenre);
         resetInfiniteScroll();
-      });
-
-      document.getElementById('year-filter').addEventListener('change', function () {
+      };
+      document.getElementById('year-filter').onchange = function () {
         currentYear = this.value;
         console.log('[year-filter] Changed to:', currentYear);
         resetInfiniteScroll();
-      });
-
+      };
       document.getElementById('clear-genre-btn').onclick = function () {
-        console.log('[clear-genre-btn] Clicked');
-        currentGenre = '';
-        currentYear = '';
-        genreFilter.value = '';
-        document.getElementById('year-filter').value = '';
+        currentGenre = "";
+        currentYear = "";
+        document.getElementById('genre-filter').value = "";
+        document.getElementById('year-filter').value = "";
+        console.log('[clear-genre-btn] Cleared filters');
         resetInfiniteScroll();
       };
 
       // Infinite scroll event listener
-      window.addEventListener('scroll', debounce(() => {
+      window.addEventListener('scroll', throttle(() => {
         if (currentMode === 'favorites') return;
         const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
-        if (scrollTop + clientHeight >= scrollHeight - 100 && !isLoading && !reachedEnd) {
-          console.log('[scroll] Triggering loadMoreMovies');
+        if (scrollTop + clientHeight >= scrollHeight - 300 && !isLoading && !reachedEnd) {
           loadMoreMovies();
         }
-      }, 100));
+      }, 200));
+
+      // Add touchend for tablets/mobile
+      window.addEventListener('touchend', () => {
+        if (currentMode === 'favorites') return;
+        const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+        if (scrollTop + clientHeight >= scrollHeight - 300 && !isLoading && !reachedEnd) {
+          console.log('[touchend] Triggering loadMoreMovies');
+          loadMoreMovies();
+        }
+      });
 
       // Initial load
-      console.log('[DOMContentLoaded] Initializing with mode:', currentMode);
       renderRecentlyViewed();
-      switchMode('popular');
+      resetInfiniteScroll();
     });
 
-    // Keyboard accessibility
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') {
-        closeModal();
-      }
-    });
-
-    // Prevent modal close on click inside modal content
-    document.querySelectorAll('.modal-content').forEach(modal => {
-      modal.addEventListener('click', e => e.stopPropagation());
-    });
-
-    // Close modal on click outside
-    document.getElementById('modal').addEventListener('click', closeModal);
+    // Modal close on outside click
+    document.getElementById('modal').onclick = function (e) {
+      if (e.target === this) closeModal();
+    };
   </script>
 </body>
 </html>
