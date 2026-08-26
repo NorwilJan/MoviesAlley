@@ -1,61 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>StreamVault | Elite Streaming</title>
-  
-  <!-- Premium Fonts & Icons -->
+  <title>StreamVault — Elite Cinema & Streaming Experience</title>
+
+  <link rel="stylesheet" href="css/home.css" />
+  <link rel="manifest" href="manifest.json" />
+
+  <!-- FontAwesome & Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  
-  <link rel="stylesheet" href="css/home.css" />
+
+  <script defer src="js/home.js"></script>
 </head>
+
 <body>
 
-  <!-- NAVIGATION BAR -->
+  <!-- =========================
+       NAVBAR
+  ========================== -->
   <header class="navbar">
-    <a href="index.html" class="logo-link">
-      <span class="logo-text">STREAM<span class="logo-highlight">VAULT</span></span>
+    <a href="index.html" class="brand-logo">
+      <img src="logo.png" alt="StreamVault" onerror="this.style.display='none'" />
+      <span>StreamVault</span>
     </a>
-    
+
     <div class="nav-links">
-      <a href="index.html" class="active"><i class="fa-solid fa-house"></i> Home</a>
+      <a href="index.html">Home</a>
+
+      <!-- WATCHLIST BADGE -->
       <a href="#watchlist-row" class="nav-badge-link">
-        <i class="fa-solid fa-bookmark"></i> My List 
-        <span id="watchlist-badge" class="nav-badge" style="display:none;">0</span>
+        My List <span id="watchlist-badge" class="nav-badge" style="display:none;">0</span>
       </a>
+
+      <!-- SURPRISE ME -->
       <button class="surprise-nav-btn" onclick="surpriseMe()" title="Surprise Me!">
-        <i class="fa-solid fa-shuffle"></i> <span>Surprise Me</span>
+        <i class="fa-solid fa-wand-magic-sparkles"></i> <span>Surprise Me</span>
       </button>
-      
-      <div class="search-container">
-        <i class="fa-solid fa-search search-icon"></i>
-        <input type="text" class="search-bar" placeholder="Search movies, TV..." onclick="openSearchModal()" readonly />
+
+      <!-- SEARCH TRIGGER -->
+      <div class="search-trigger">
+        <input type="text" class="search-bar" placeholder="Search movies..." readonly onclick="openSearchModal()" />
+        <span class="search-shortcut-hint">⌘K</span>
       </div>
     </div>
   </header>
 
-  <!-- HERO BANNER -->
+  <!-- =========================
+       HERO BANNER
+  ========================== -->
   <section class="banner" id="banner">
     <div class="banner-content">
-      <div class="banner-badge" id="banner-badge">TRENDING #1</div>
-      <h1 id="banner-title">Loading Featured Title...</h1>
-      <p id="banner-description" class="banner-desc">Fetching the latest blockbusters for you.</p>
-      <div class="banner-actions">
-        <button class="banner-btn primary" onclick="playBanner()">
+      <div class="banner-badge-group">
+        <span class="banner-badge"><i class="fa-solid fa-fire"></i> Featured #1</span>
+        <span class="banner-meta" id="banner-year">2026</span>
+        <span class="banner-meta banner-rating" id="banner-rating"><i class="fa-solid fa-star"></i> 8.8</span>
+      </div>
+
+      <h1 id="banner-title">Loading Featured...</h1>
+      <p class="banner-overview" id="banner-overview"></p>
+
+      <div class="banner-btn-group">
+        <button class="banner-btn" onclick="playBanner()">
           <i class="fa-solid fa-play"></i> Watch Now
-        </button>
-        <button class="banner-btn secondary" onclick="openBannerDetails()">
-          <i class="fa-solid fa-circle-info"></i> More Info
         </button>
       </div>
     </div>
+
+    <!-- ROTATING DOTS -->
+    <div class="banner-controls">
+      <div class="banner-dots" id="banner-dots"></div>
+    </div>
   </section>
 
-  <!-- CATEGORY FILTER TABS -->
+  <!-- =========================
+       CATEGORY FILTER TABS
+  ========================== -->
   <nav class="filter-tabs">
     <button class="tab-btn active" onclick="filterContent('all', this)">All Content</button>
     <button class="tab-btn" onclick="filterContent('movie', this)">Movies</button>
@@ -71,14 +94,16 @@
     <button class="genre-btn" onclick="filterByGenre(27, this)">Horror</button>
     <button class="genre-btn" onclick="filterByGenre(878, this)">Sci-Fi</button>
     <button class="genre-btn" onclick="filterByGenre(18, this)">Drama</button>
-    <button class="genre-btn" onclick="filterByGenre(10749, this)">Romance</button>
-    <button class="genre-btn" onclick="filterByGenre(16, this)">Animation</button>
   </div>
 
-  <!-- CONTINUE WATCHING ROW -->
+  <!-- =========================
+       CONTENT ROWS WITH DESKTOP ARROWS
+  ========================== -->
+
+  <!-- CONTINUE WATCHING -->
   <div class="row" id="continue-row" style="display:none;">
     <div class="row-header">
-      <h2><i class="fa-solid fa-clock-rotate-left"></i> Continue Watching</h2>
+      <h2>Continue Watching</h2>
       <button class="clear-btn" onclick="clearContinueWatching()">Clear History</button>
     </div>
     <div class="list-wrapper">
@@ -88,10 +113,10 @@
     </div>
   </div>
 
-  <!-- MY WATCHLIST ROW -->
+  <!-- MY LIST -->
   <div class="row" id="watchlist-row" style="display:none;">
     <div class="row-header">
-      <h2><i class="fa-solid fa-bookmark"></i> My Watchlist</h2>
+      <h2>My Watchlist</h2>
       <button class="clear-btn" onclick="clearWatchlist()">Clear List</button>
     </div>
     <div class="list-wrapper">
@@ -101,7 +126,7 @@
     </div>
   </div>
 
-  <!-- TRENDING MOVIES ROW -->
+  <!-- MOVIES -->
   <div class="row" id="movies-row">
     <div class="row-header">
       <h2>Trending Movies</h2>
@@ -114,7 +139,7 @@
     </div>
   </div>
 
-  <!-- TRENDING TV SHOWS ROW -->
+  <!-- TV SHOWS -->
   <div class="row" id="tvshows-row">
     <div class="row-header">
       <h2>Trending TV Shows</h2>
@@ -127,10 +152,10 @@
     </div>
   </div>
 
-  <!-- POPULAR ANIME ROW -->
+  <!-- ANIME -->
   <div class="row" id="anime-row">
     <div class="row-header">
-      <h2>Popular Anime</h2>
+      <h2>Trending Anime</h2>
       <button class="see-all-btn" onclick="openGridModal('anime')">See All <i class="fa-solid fa-chevron-right"></i></button>
     </div>
     <div class="list-wrapper">
@@ -140,86 +165,115 @@
     </div>
   </div>
 
-  <!-- DETAILS & PLAYER MODAL -->
+  <!-- TAGALOG MOVIES -->
+  <div class="row" id="tagalog-row">
+    <div class="row-header">
+      <h2>Trending Tagalog Movies</h2>
+      <button class="see-all-btn" onclick="openGridModal('tagalog')">See All <i class="fa-solid fa-chevron-right"></i></button>
+    </div>
+    <div class="list-wrapper">
+      <button class="scroll-arrow left" onclick="scrollList('tagalog-list', -1)"><i class="fa-solid fa-chevron-left"></i></button>
+      <div class="list" id="tagalog-list"></div>
+      <button class="scroll-arrow right" onclick="scrollList('tagalog-list', 1)"><i class="fa-solid fa-chevron-right"></i></button>
+    </div>
+  </div>
+
+  <!-- K-DRAMAS -->
+  <div class="row" id="kdrama-row">
+    <div class="row-header">
+      <h2>Trending K-Dramas</h2>
+      <button class="see-all-btn" onclick="openGridModal('kdrama')">See All <i class="fa-solid fa-chevron-right"></i></button>
+    </div>
+    <div class="list-wrapper">
+      <button class="scroll-arrow left" onclick="scrollList('kdrama-list', -1)"><i class="fa-solid fa-chevron-left"></i></button>
+      <div class="list" id="kdrama-list"></div>
+      <button class="scroll-arrow right" onclick="scrollList('kdrama-list', 1)"><i class="fa-solid fa-chevron-right"></i></button>
+    </div>
+  </div>
+
+  <!-- =========================
+       DETAILS & PLAYER MODAL
+  ========================== -->
   <div class="modal" id="modal">
     <div class="modal-content">
-      <span class="close-btn" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></span>
+      <button class="close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+
       <div class="modal-body">
-        <div class="modal-poster-wrap">
-          <img id="modal-image" src="" alt="Poster" />
-        </div>
+        <img id="modal-image" src="" alt="Poster" />
         <div class="modal-text">
-          <h2 id="modal-title">Movie Title</h2>
-          <div class="modal-meta">
-            <span id="modal-year" class="meta-tag">2026</span>
-            <span id="modal-rating" class="meta-rating"><i class="fa-solid fa-star"></i> 8.5</span>
-            <span id="modal-type" class="meta-tag uppercase">Movie</span>
-          </div>
+          <h2 id="modal-title">Title</h2>
+          <div class="stars" id="modal-rating"></div>
+          <p id="modal-description"></p>
+
           <div class="modal-actions-inline">
-            <button id="modal-play-btn" class="action-btn play-btn" onclick="startStreaming()">
-              <i class="fa-solid fa-play"></i> Watch Stream
-            </button>
-            <button id="watchlist-btn" class="action-btn watchlist-btn" onclick="toggleWatchlist()">
-              <i class="fa-solid fa-plus"></i> Add to List
-            </button>
-            <button class="action-btn share-btn" onclick="shareCurrentItem()">
-              <i class="fa-solid fa-share-nodes"></i> Share
-            </button>
+            <button class="watchlist-btn" id="watchlist-btn" onclick="toggleWatchlist()">Add to List</button>
+            <button class="share-btn" onclick="shareCurrentItem()"><i class="fa-solid fa-share-nodes"></i> Share</button>
           </div>
-          <p id="modal-description">Detailed overview will appear here...</p>
-          
-          <!-- TV Show Season/Episode Selector -->
-          <div id="series-options" class="series-options" style="display:none;">
-            <div class="selector-group">
-              <label for="season-select">Season:</label>
-              <select id="season-select" class="custom-select" onchange="onSeasonChange()"></select>
-            </div>
-            <div class="selector-group">
-              <label>Episodes:</label>
-              <div id="episodes-container" class="episodes-grid"></div>
-            </div>
+
+          <div class="server-switcher">
+            <span>Server:</span>
+            <button class="server-btn active" data-server="videasy" onclick="switchServer('videasy')">Videasy</button>
+            <button class="server-btn" data-server="vidsrc" onclick="switchServer('vidsrc')">VidSrc</button>
+            <button class="server-btn" data-server="vidsrcpro" onclick="switchServer('vidsrcpro')">VidSrc Pro</button>
           </div>
         </div>
       </div>
 
-      <!-- STREAMING PLAYER CONTAINER -->
-      <div class="video-container" id="video-wrapper" style="display:none;">
-        <div class="player-header">
-          <span id="player-status-text">Now Playing</span>
-          <button class="close-player-btn" onclick="closePlayer()"><i class="fa-solid fa-xmark"></i> Close Player</button>
-        </div>
-        <iframe id="modal-video" allowfullscreen frameborder="0"></iframe>
+      <!-- TV SERIES OPTIONS -->
+      <div class="series-options" id="series-options" style="display:none;">
+        <select class="season-select" id="season-select" onchange="onSeasonChange()"></select>
+        <div class="episodes-container" id="episodes-container"></div>
       </div>
 
-      <!-- TRAILER & CAST SECTIONS -->
-      <div id="modal-extra-section">
-        <div id="modal-cast-container" class="extra-block"></div>
-        <div id="modal-trailer-container" class="extra-block"></div>
+      <!-- VIDEO CONTAINER -->
+      <div class="video-container">
+        <iframe id="modal-video" src="about:blank" allowfullscreen></iframe>
       </div>
+
+      <div id="modal-trailer-container"></div>
+      <div id="modal-cast-container"></div>
     </div>
   </div>
 
-  <!-- SEE ALL GRID MODAL -->
-  <div class="modal" id="grid-modal">
-    <div class="modal-content full-width">
-      <span class="close-btn" onclick="closeGridModal()"><i class="fa-solid fa-xmark"></i></span>
-      <h2 id="grid-modal-title" class="grid-title">All Titles</h2>
-      <div class="grid-container" id="grid-container"></div>
+  <!-- =========================
+       SEE ALL GRID MODAL
+  ========================== -->
+  <div class="grid-modal" id="grid-modal">
+    <div class="grid-modal-header">
+      <h2 id="grid-modal-title">Category</h2>
+      <button class="close" onclick="closeGridModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="grid-scroll-area" id="grid-scroll-area">
+      <div class="grid-container" id="grid-modal-results"></div>
     </div>
   </div>
 
-  <!-- LIVE SEARCH MODAL -->
-  <div class="modal" id="search-modal">
-    <div class="modal-content full-width search-modal-content">
-      <span class="close-btn" onclick="closeSearchModal()"><i class="fa-solid fa-xmark"></i></span>
-      <div class="search-modal-header">
-        <i class="fa-solid fa-search"></i>
-        <input type="text" id="active-search-input" placeholder="Search by title, actor, genre..." oninput="handleSearchInput(event)" autofocus />
+  <!-- =========================
+       SEARCH MODAL
+  ========================== -->
+  <div class="search-modal" id="search-modal">
+    <button class="close" onclick="closeSearchModal()"><i class="fa-solid fa-xmark"></i></button>
+    <div class="search-input-wrapper">
+      <i class="fa-solid fa-magnifying-glass search-icon-left"></i>
+      <input type="text" id="search-input" placeholder="Search movies, TV shows, anime..." oninput="debounceSearch()" />
+    </div>
+    <div class="recent-searches" id="recent-searches"></div>
+    <div class="results" id="search-results"></div>
+  </div>
+
+  <!-- =========================
+       FOOTER
+  ========================== -->
+  <footer class="footer">
+    <div class="footer-content">
+      <p>&copy; 2026 StreamVault — Premium Cinema Experience. Powered by TMDB API.</p>
+      <div class="footer-links">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+        <a href="#">Help Center</a>
       </div>
-      <div class="grid-container" id="search-results-grid"></div>
     </div>
-  </div>
+  </footer>
 
-  <script src="js/home.js"></script>
 </body>
 </html>
