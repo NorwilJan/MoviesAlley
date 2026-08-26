@@ -1,5 +1,5 @@
 /* =========================================================
-   STREAMVAULT — ELITE PRODUCTION DESIGN (UPDATED)
+   STREAMVAULT — PRODUCTION CSS ENGINE
 ========================================================= */
 
 :root {
@@ -104,7 +104,7 @@ body.modal-open {
   transition: color 0.2s ease;
 }
 
-.nav-links > a:hover {
+.nav-links > a:hover, .nav-links > a.active {
   color: #fff;
 }
 
@@ -121,7 +121,7 @@ body.modal-open {
   transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.nav-links > a:hover::after {
+.nav-links > a:hover::after, .nav-links > a.active::after {
   transform: scaleX(1);
 }
 
@@ -293,24 +293,24 @@ body.modal-open {
 }
 
 /* =========================================================
-   TABS & ROW CONTENT
+   ROW CONTENT & TABS
 ========================================================= */
 
-.filter-tabs, .genre-tabs {
+.genre-tabs {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 20px max(16px, 3vw) 10px;
+  padding: 10px 0;
   overflow-x: auto;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
 }
 
-.filter-tabs::-webkit-scrollbar, .genre-tabs::-webkit-scrollbar {
+.genre-tabs::-webkit-scrollbar {
   display: none;
 }
 
-.tab-btn, .genre-btn {
+.genre-btn {
   flex-shrink: 0;
   background: #141414;
   color: var(--muted);
@@ -324,12 +324,12 @@ body.modal-open {
   transition: all 0.2s ease;
 }
 
-.tab-btn:hover, .genre-btn:hover {
+.genre-btn:hover {
   background: #222;
   color: #fff;
 }
 
-.tab-btn.active, .genre-btn.active {
+.genre-btn.active {
   background: var(--red);
   color: #fff;
   border-color: var(--red);
@@ -528,11 +528,128 @@ body.modal-open {
   transform: rotate(90deg);
 }
 
-/* Modal Internal Layout */
 .modal-body {
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+.modal-text {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal-text h2 {
+  font-size: 1.8rem;
+  font-weight: 800;
+}
+
+.stars {
+  color: #ffc107;
+  font-size: 1.1rem;
+}
+
+.modal-actions-inline {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.watchlist-btn, .share-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.watchlist-btn:hover, .share-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.watchlist-btn.remove {
+  background: var(--red);
+  border-color: var(--red);
+}
+
+/* Series Options */
+.series-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.select-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.select-wrapper select {
+  background: #222;
+  color: #fff;
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  border-radius: 6px;
+  outline: none;
+}
+
+.episodes-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 120px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.episode-btn {
+  background: #222;
+  border: 1px solid var(--border);
+  color: #ccc;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.episode-btn:hover { background: #333; color: #fff; }
+.episode-btn.active { background: var(--red); color: #fff; border-color: var(--red); }
+
+/* Server Switcher */
+.server-switcher {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.server-btn {
+  background: #222;
+  border: 1px solid var(--border);
+  color: #aaa;
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.server-btn.active {
+  background: #fff;
+  color: #000;
+  border-color: #fff;
+  font-weight: 700;
 }
 
 @media (min-width: 768px) {
@@ -550,7 +667,7 @@ body.modal-open {
   width: 100%;
   aspect-ratio: 16 / 9;
   background: #000;
-  margin: 16px 0;
+  margin: 20px 0 10px;
   border-radius: 8px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -562,7 +679,18 @@ body.modal-open {
   border: none;
 }
 
-/* Grid & Search Containers */
+/* Grid & Search Modals */
+.grid-header {
+  padding: 20px max(16px, 3vw);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.grid-header h2 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+
 .grid-container, .search-modal .results {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
@@ -583,7 +711,36 @@ body.modal-open {
   padding: 0 max(16px, 3vw);
 }
 
-/* Cast Grid horizontal scroller */
+.search-input-wrapper {
+  padding: 30px max(16px, 3vw) 10px;
+  display: flex;
+  justify-content: center;
+}
+
+.search-modal #search-input {
+  width: min(600px, 100%);
+  height: 50px;
+  padding: 0 20px;
+  border-radius: 25px;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  font-size: 1rem;
+  outline: none;
+}
+
+.search-modal #search-input:focus {
+  border-color: var(--red);
+  box-shadow: 0 0 20px var(--glow);
+}
+
+.search-modal .results {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px max(16px, 3vw);
+}
+
+/* Cast Grid */
 .cast-grid {
   display: flex;
   gap: 12px;
@@ -602,6 +759,7 @@ body.modal-open {
   height: 115px;
   object-fit: cover;
   border-radius: 6px;
+  margin-bottom: 4px;
 }
 
 /* FOOTER */
