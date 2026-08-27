@@ -1,239 +1,527 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>StreamVault — Watch Movies & TV Shows</title>
-  <link rel="stylesheet" href="css/home.css" />
-  <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <script defer src="js/home.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StreamVault — Cinema & Movies</title>
+  <style>
+    /* =========================================================
+       THEATER DARK THEME STYLES
+    ========================================================= */
+    :root {
+      --bg-dark: #0f0f11;
+      --card-bg: #18181c;
+      --accent-red: #e50914;
+      --text-main: #ffffff;
+      --text-muted: #aaaaaa;
+      --border-color: #2a2a30;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header & Navigation */
+    header {
+      background: rgba(15, 15, 17, 0.95);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 16px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--accent-red);
+      letter-spacing: 1px;
+    }
+
+    .search-box {
+      width: 320px;
+      position: relative;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 10px 16px;
+      border-radius: 20px;
+      border: 1px solid var(--border-color);
+      background: var(--card-bg);
+      color: var(--text-main);
+      outline: none;
+      font-size: 0.9rem;
+    }
+
+    .search-box input:focus {
+      border-color: var(--accent-red);
+    }
+
+    /* Main Container */
+    main {
+      flex: 1;
+      max-width: 1280px;
+      margin: 0 auto;
+      width: 100%;
+      padding: 32px 16px;
+    }
+
+    .section-title {
+      font-size: 1.25rem;
+      margin-bottom: 16px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    /* Grid Displays */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    /* Movie Card */
+    .movie-card {
+      position: relative;
+      background: var(--card-bg);
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .movie-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+    }
+
+    .movie-card img {
+      width: 100%;
+      aspect-ratio: 2/3;
+      object-fit: cover;
+      display: block;
+    }
+
+    .bookmark-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(0, 0, 0, 0.75);
+      border: none;
+      font-size: 1.1rem;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+
+    .bookmark-btn:hover {
+      background: rgba(0, 0, 0, 0.95);
+    }
+
+    .movie-info {
+      padding: 10px;
+    }
+
+    .movie-info h4 {
+      font-size: 0.85rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .movie-info span {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* Skeleton Loader Animation */
+    .skeleton-card {
+      background: var(--card-bg);
+      border-radius: 8px;
+      aspect-ratio: 2/3;
+      animation: pulse 1.5s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.4; }
+      50% { opacity: 0.8; }
+      100% { opacity: 0.4; }
+    }
+
+    /* Modal Layer */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .modal-content {
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      width: 100%;
+      max-width: 900px;
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 12px;
+      right: 16px;
+      background: rgba(0,0,0,0.6);
+      border: none;
+      color: #fff;
+      font-size: 1.5rem;
+      cursor: pointer;
+      z-index: 10;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+    }
+
+    .player-container {
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: #000;
+    }
+
+    .player-container iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .server-picker {
+      display: flex;
+      gap: 10px;
+      margin: 12px 0 20px 0;
+    }
+
+    .server-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    .server-btn.active {
+      background: var(--accent-red);
+      border-color: var(--accent-red);
+    }
+
+    .movie-details p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+  </style>
 </head>
 <body>
 
-  <!-- NAVBAR -->
-  <header class="navbar">
-    <a href="#" aria-label="StreamVault Home">
-      <img src="logo.png" alt="StreamVault Logo" />
-    </a>
-
-    <nav class="nav-links">
-      <a href="#" class="active" onclick="filterContent('all', this)">Home</a>
-      <a href="#" onclick="filterContent('movie', this)">Movies</a>
-      <a href="#" onclick="filterContent('tv', this)">TV Shows</a>
-      <a href="#" onclick="filterContent('anime', this)">Anime</a>
-      <a href="#" class="nav-badge-link" onclick="openGridModal('watchlist')">
-        My List <span id="watchlist-badge" class="nav-badge" style="display: none;">0</span>
-      </a>
-    </nav>
-
-    <div style="display: flex; align-items: center; gap: 12px;">
-      <button class="surprise-nav-btn" onclick="surpriseMe()" aria-label="Surprise Me">
-        <i class="fa-solid fa-dice"></i>
-        <span>Surprise</span>
-      </button>
-
-      <input 
-        type="text" 
-        class="search-bar" 
-        placeholder="Search... (Press /)" 
-        onclick="openSearchModal()" 
-        readonly 
-        aria-label="Search media"
-      />
+  <!-- Header -->
+  <header>
+    <div class="brand">STREAMVAULT</div>
+    <div class="search-box">
+      <input type="text" id="search-input" placeholder="Search movies...">
     </div>
   </header>
 
-  <!-- MAIN BANNER -->
-  <section id="banner" class="banner">
-    <div class="banner-content">
-      <h1 id="banner-title">Loading Featured...</h1>
-      <div class="banner-btn-group">
-        <button class="banner-btn" onclick="playBanner()">
-          <i class="fa-solid fa-play"></i> Watch Now
-        </button>
-      </div>
-    </div>
-  </section>
-
-  <!-- MAIN CONTENT CONTAINER -->
+  <!-- Main View -->
   <main>
-    <!-- CONTINUE WATCHING ROW -->
-    <section id="continue-row" class="row" style="display: none;">
-      <div class="row-header">
-        <h2>Continue Watching</h2>
-        <button class="clear-btn" onclick="clearContinueWatching()">Clear All</button>
-      </div>
-      <div class="list-wrapper">
-        <div id="continue-list" class="list"></div>
-      </div>
-    </section>
+    <!-- Search Results View (Hidden when empty) -->
+    <div id="search-section" style="display: none;">
+      <h2 class="section-title">Search Results</h2>
+      <div id="search-results-grid" class="grid"></div>
+    </div>
 
-    <!-- WATCHLIST ROW -->
-    <section id="watchlist-row" class="row" style="display: none;">
-      <div class="row-header">
-        <h2>My List</h2>
-        <button class="clear-btn" onclick="clearWatchlist()">Clear All</button>
-      </div>
-      <div class="list-wrapper">
-        <div id="watchlist-list" class="list"></div>
-      </div>
-    </section>
+    <!-- LocalStorage Watchlist View -->
+    <div id="watchlist-section" style="display: none;">
+      <h2 class="section-title">My Watchlist</h2>
+      <div id="watchlist-grid" class="grid"></div>
+    </div>
 
-    <!-- TRENDING MOVIES -->
-    <section id="movies-row" class="row">
-      <div class="row-header">
-        <h2>Trending Movies</h2>
-        <button class="see-all-btn" onclick="openGridModal('movies')">See All</button>
-      </div>
-      <div class="list-wrapper">
-        <button class="scroll-arrow left" onclick="scrollList('movies-list', -1)" aria-label="Scroll left"><i class="fa-solid fa-chevron-left"></i></button>
-        <div id="movies-list" class="list"></div>
-        <button class="scroll-arrow right" onclick="scrollList('movies-list', 1)" aria-label="Scroll right"><i class="fa-solid fa-chevron-right"></i></button>
-      </div>
-    </section>
-
-    <!-- TRENDING TV SHOWS -->
-    <section id="tvshows-row" class="row">
-      <div class="row-header">
-        <h2>Trending TV Shows</h2>
-        <button class="see-all-btn" onclick="openGridModal('tv')">See All</button>
-      </div>
-      <div class="list-wrapper">
-        <button class="scroll-arrow left" onclick="scrollList('tvshows-list', -1)" aria-label="Scroll left"><i class="fa-solid fa-chevron-left"></i></button>
-        <div id="tvshows-list" class="list"></div>
-        <button class="scroll-arrow right" onclick="scrollList('tvshows-list', 1)" aria-label="Scroll right"><i class="fa-solid fa-chevron-right"></i></button>
-      </div>
-    </section>
-
-    <!-- ANIME ROW -->
-    <section id="anime-row" class="row">
-      <div class="row-header">
-        <h2>Popular Anime</h2>
-        <button class="see-all-btn" onclick="openGridModal('anime')">See All</button>
-      </div>
-      <div class="list-wrapper">
-        <button class="scroll-arrow left" onclick="scrollList('anime-list', -1)" aria-label="Scroll left"><i class="fa-solid fa-chevron-left"></i></button>
-        <div id="anime-list" class="list"></div>
-        <button class="scroll-arrow right" onclick="scrollList('anime-list', 1)" aria-label="Scroll right"><i class="fa-solid fa-chevron-right"></i></button>
-      </div>
-    </section>
-
-    <!-- TAGALOG MOVIES -->
-    <section id="tagalog-row" class="row">
-      <div class="row-header">
-        <h2>Filipino Cinema</h2>
-        <button class="see-all-btn" onclick="openGridModal('tagalog')">See All</button>
-      </div>
-      <div class="list-wrapper">
-        <button class="scroll-arrow left" onclick="scrollList('tagalog-list', -1)" aria-label="Scroll left"><i class="fa-solid fa-chevron-left"></i></button>
-        <div id="tagalog-list" class="list"></div>
-        <button class="scroll-arrow right" onclick="scrollList('tagalog-list', 1)" aria-label="Scroll right"><i class="fa-solid fa-chevron-right"></i></button>
-      </div>
-    </section>
-
-    <!-- K-DRAMA ROW -->
-    <section id="kdrama-row" class="row">
-      <div class="row-header">
-        <h2>Korean Dramas</h2>
-        <button class="see-all-btn" onclick="openGridModal('kdrama')">See All</button>
-      </div>
-      <div class="list-wrapper">
-        <button class="scroll-arrow left" onclick="scrollList('kdrama-list', -1)" aria-label="Scroll left"><i class="fa-solid fa-chevron-left"></i></button>
-        <div id="kdrama-list" class="list"></div>
-        <button class="scroll-arrow right" onclick="scrollList('kdrama-list', 1)" aria-label="Scroll right"><i class="fa-solid fa-chevron-right"></i></button>
-      </div>
-    </section>
+    <!-- Main Feed -->
+    <h2 class="section-title">Trending Movies</h2>
+    <div id="main-movie-grid" class="grid"></div>
   </main>
 
-  <!-- DETAILS MODAL -->
-  <div id="modal" class="modal" role="dialog" aria-hidden="true">
+  <!-- Player & Details Modal -->
+  <div id="player-modal" class="modal-overlay">
     <div class="modal-content">
-      <button class="close" onclick="closeModal()" aria-label="Close modal">&times;</button>
+      <button class="close-btn" onclick="closeModal()">&times;</button>
+      <div class="player-container">
+        <iframe id="video-player" allowfullscreen></iframe>
+      </div>
       <div class="modal-body">
-        <img id="modal-image" src="" alt="Poster" />
-        <div class="modal-text">
-          <h2 id="modal-title"></h2>
-          <div id="modal-rating" class="stars"></div>
-          <p id="modal-description"></p>
+        <h2 id="modal-title">Movie Title</h2>
+        
+        <!-- Multi-Server Selector -->
+        <div class="server-picker">
+          <button class="server-btn active" data-server="videasy" onclick="switchServer('videasy')">Server 1 (Primary)</button>
+          <button class="server-btn" data-server="vidsrccc" onclick="switchServer('vidsrccc')">Server 2 (Vidsrc.cc)</button>
+          <button class="server-btn" data-server="vidsrcpro" onclick="switchServer('vidsrcpro')">Server 3 (Fast)</button>
+        </div>
+
+        <div class="movie-details">
+          <h3>Overview</h3>
+          <p id="modal-overview">Movie overview text goes here...</p>
+        </div>
+
+        <!-- Recommendations Grid -->
+        <h3 style="margin-top: 24px;" class="section-title">You Might Also Like</h3>
+        <div id="recommendations-grid" class="grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript App Logic -->
+  <script>
+    const APP_CONFIG = Object.freeze({
+      API_KEY: 'c5f2e226dd2ee0c8ed2c272a0ebaf049',
+      BASE_URL: 'https://api.themoviedb.org/3',
+      POSTER_URL: 'https://image.tmdb.org/t/p/w342',
+      SERVERS: {
+        videasy: 'https://player.videasy.net/movie/',
+        vidsrccc: 'https://vidsrc.cc/v2/embed/movie/',
+        vidsrcpro: 'https://vidsrc.pro/embed/movie/'
+      }
+    });
+
+    const appState = {
+      activeMovie: null,
+      activeServer: 'videasy',
+      watchlist: JSON.parse(localStorage.getItem('sv_watchlist') || '[]'),
+      searchTimeout: null
+    };
+
+    /* --- API Engine --- */
+    async function apiFetch(endpoint, params = {}) {
+      try {
+        const url = new URL(`${APP_CONFIG.BASE_URL}${endpoint}`);
+        url.searchParams.set('api_key', APP_CONFIG.API_KEY);
+        Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+        
+        const res = await fetch(url.toString());
+        return res.ok ? await res.json() : null;
+      } catch (err) {
+        console.error('API Error:', err);
+        return null;
+      }
+    }
+
+    async function fetchCleanMovies() {
+      const data = await apiFetch('/discover/movie', {
+        sort_by: 'popularity.desc',
+        without_genres: '10764,10767,10763,99,16', // Excludes Reality, Talk, News, Docs, Anime
+        page: 1
+      });
+      return data?.results || [];
+    }
+
+    /* --- UI Rendering --- */
+    function renderSkeletons(container, count = 6) {
+      container.innerHTML = Array(count).fill('<div class="skeleton-card"></div>').join('');
+    }
+
+    function createMovieCard(movie) {
+      const isSaved = appState.watchlist.some(item => item.id === movie.id);
+      const card = document.createElement('div');
+      card.className = 'movie-card';
+      
+      card.innerHTML = `
+        <img src="${movie.poster_path ? APP_CONFIG.POSTER_URL + movie.poster_path : 'https://via.placeholder.com/342x513'}" 
+             alt="${movie.title}" loading="lazy">
+        <button class="bookmark-btn" data-id="${movie.id}" style="color:${isSaved ? '#e50914' : '#fff'};">
+          ${isSaved ? '♥' : '♡'}
+        </button>
+        <div class="movie-info">
+          <h4>${movie.title}</h4>
+          <span>★ ${movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A'}</span>
+        </div>
+      `;
+
+      card.addEventListener('click', (e) => {
+        if (e.target.classList.contains('bookmark-btn')) {
+          e.stopPropagation();
+          toggleWatchlist(movie, e.target);
+          return;
+        }
+        openPlaybackModal(movie);
+      });
+
+      return card;
+    }
+
+    /* --- Modal & Video Playback --- */
+    async function openPlaybackModal(movie) {
+      appState.activeMovie = movie;
+      
+      document.getElementById('modal-title').textContent = movie.title;
+      document.getElementById('modal-overview').textContent = movie.overview || 'No description available.';
+      
+      switchServer(appState.activeServer);
+      document.getElementById('player-modal').style.display = 'flex';
+      
+      loadRecommendations(movie.id);
+    }
+
+    function closeModal() {
+      document.getElementById('player-modal').style.display = 'none';
+      document.getElementById('video-player').src = '';
+    }
+
+    function switchServer(serverKey) {
+      appState.activeServer = serverKey;
+      const iframe = document.getElementById('video-player');
+      if (!iframe || !appState.activeMovie) return;
+
+      iframe.src = `${APP_CONFIG.SERVERS[serverKey]}${appState.activeMovie.id}`;
+      
+      document.querySelectorAll('.server-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.server === serverKey);
+      });
+    }
+
+    async function loadRecommendations(movieId) {
+      const container = document.getElementById('recommendations-grid');
+      renderSkeletons(container, 4);
+      
+      const data = await apiFetch(`/movie/${movieId}/recommendations`);
+      container.innerHTML = '';
+
+      if (data?.results?.length) {
+        data.results.slice(0, 6).forEach(movie => {
+          container.appendChild(createMovieCard(movie));
+        });
+      } else {
+        container.innerHTML = '<p style="color:var(--text-muted);">No similar movies found.</p>';
+      }
+    }
+
+    /* --- LocalStorage Watchlist --- */
+    function toggleWatchlist(movie, buttonEl) {
+      const index = appState.watchlist.findIndex(item => item.id === movie.id);
+      
+      if (index > -1) {
+        appState.watchlist.splice(index, 1);
+        if (buttonEl) { buttonEl.innerHTML = '♡'; buttonEl.style.color = '#fff'; }
+      } else {
+        appState.watchlist.push(movie);
+        if (buttonEl) { buttonEl.innerHTML = '♥'; buttonEl.style.color = '#e50914'; }
+      }
+
+      localStorage.setItem('sv_watchlist', JSON.stringify(appState.watchlist));
+      renderWatchlistSection();
+    }
+
+    function renderWatchlistSection() {
+      const container = document.getElementById('watchlist-grid');
+      const section = document.getElementById('watchlist-section');
+
+      container.innerHTML = '';
+      if (appState.watchlist.length === 0) {
+        section.style.display = 'none';
+        return;
+      }
+
+      section.style.display = 'block';
+      appState.watchlist.forEach(movie => {
+        container.appendChild(createMovieCard(movie));
+      });
+    }
+
+    /* --- Live Search --- */
+    function initLiveSearch() {
+      const searchInput = document.getElementById('search-input');
+      const searchResults = document.getElementById('search-results-grid');
+      const searchSection = document.getElementById('search-section');
+
+      searchInput.addEventListener('input', (e) => {
+        clearTimeout(appState.searchTimeout);
+        const query = e.target.value.trim();
+
+        if (!query) {
+          searchSection.style.display = 'none';
+          searchResults.innerHTML = '';
+          return;
+        }
+
+        appState.searchTimeout = setTimeout(async () => {
+          searchSection.style.display = 'block';
+          renderSkeletons(searchResults, 6);
           
-          <div class="modal-actions-inline">
-            <button id="watchlist-btn" class="watchlist-btn" onclick="toggleWatchlist()">Add to List</button>
-            <button class="share-btn" onclick="shareCurrentItem()"><i class="fa-solid fa-share"></i> Share</button>
-          </div>
+          const data = await apiFetch('/search/movie', { query });
+          searchResults.innerHTML = '';
 
-          <div id="series-options" class="series-options" style="display: none;">
-            <div class="select-wrapper">
-              <label for="season-select">Season:</label>
-              <select id="season-select" onchange="onSeasonChange()"></select>
-            </div>
-            <div id="episodes-container" class="episodes-container"></div>
-          </div>
+          if (data?.results?.length) {
+            data.results.forEach(movie => {
+              if (movie.poster_path) searchResults.appendChild(createMovieCard(movie));
+            });
+          } else {
+            searchResults.innerHTML = '<p style="color:var(--text-muted); grid-column: 1/-1;">No movies found.</p>';
+          }
+        }, 300);
+      });
+    }
 
-          <div class="server-switcher">
-            <span>Server:</span>
-            <button class="server-btn active" data-server="videasy" onclick="switchServer('videasy')">Server 1</button>
-            <button class="server-btn" data-server="vidsrc" onclick="switchServer('vidsrc')">Server 2</button>
-            <button class="server-btn" data-server="vidsrcpro" onclick="switchServer('vidsrcpro')">Server 3</button>
-          </div>
-        </div>
-      </div>
+    /* --- App Init --- */
+    async function initApp() {
+      initLiveSearch();
+      renderWatchlistSection();
 
-      <!-- PLAYER CONTAINER & INLINE CONTROLS -->
-      <div class="player-wrapper">
-        <div id="player-container" class="video-container">
-          <iframe id="modal-video" src="about:blank" allowfullscreen title="Video Player"></iframe>
-        </div>
+      const mainGrid = document.getElementById('main-movie-grid');
+      renderSkeletons(mainGrid, 12);
+      
+      const movies = await fetchCleanMovies();
+      mainGrid.innerHTML = '';
+      movies.forEach(movie => mainGrid.appendChild(createMovieCard(movie)));
+    }
 
-        <div id="player-quick-controls" class="player-quick-controls" style="display: none;">
-          <button class="quick-btn" onclick="skipIntro()">
-            <i class="fa-solid fa-forward-step"></i> Skip Intro (+85s)
-          </button>
-          <button class="quick-btn primary" onclick="playNextEpisode()">
-            <span>Next Episode</span> <i class="fa-solid fa-chevron-right"></i>
-          </button>
-        </div>
-      </div>
-
-      <!-- TRAILER AND CAST CONTAINER -->
-      <div id="modal-trailer-container"></div>
-      <div id="modal-cast-container"></div>
-    </div>
-  </div>
-
-  <!-- SEE ALL GRID MODAL -->
-  <div id="grid-modal" class="grid-modal" role="dialog" aria-hidden="true">
-    <button class="close" onclick="closeGridModal()" aria-label="Close Modal">&times;</button>
-    <div class="grid-header">
-      <h2 id="grid-modal-title">Category Details</h2>
-      <div id="genre-tabs" class="genre-tabs"></div>
-    </div>
-    <div id="grid-scroll-area" class="grid-scroll-area">
-      <div id="grid-modal-results" class="grid-container"></div>
-    </div>
-  </div>
-
-  <!-- SEARCH MODAL -->
-  <div id="search-modal" class="search-modal" role="dialog" aria-hidden="true">
-    <button class="close" onclick="closeSearchModal()" aria-label="Close Search">&times;</button>
-    <div class="search-input-wrapper">
-      <input 
-        type="text" 
-        id="search-input" 
-        placeholder="Type movie or show name..." 
-        oninput="debounceSearch()" 
-        aria-label="Search Input"
-      />
-    </div>
-    <div id="search-results" class="results"></div>
-  </div>
-
-  <!-- FOOTER -->
-  <footer class="footer">
-    <div class="footer-content">
-      <p>&copy; 2026 StreamVault. All rights reserved.</p>
-    </div>
-  </footer>
-
+    document.addEventListener('DOMContentLoaded', initApp);
+  </script>
 </body>
 </html>
