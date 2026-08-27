@@ -1,5 +1,5 @@
 /* =========================================================
-   STREAMVAULT — COMPLETE JS ENGINE (ROBUST & PREVENTATIVE)
+   STREAMVAULT — PRODUCTION JS ENGINE (COMPLETE & INTEGRATED)
 ========================================================= */
 
 const CONFIG = Object.freeze({
@@ -316,6 +316,11 @@ async function showDetails(item) {
     state.openedFromGrid = true;
     DOM.gridModal.classList.remove('active');
     DOM.gridModal.setAttribute('aria-hidden', 'true');
+  }
+
+  if (DOM.searchModal?.classList.contains('active')) {
+    DOM.searchModal.classList.remove('active');
+    DOM.searchModal.setAttribute('aria-hidden', 'true');
   }
 
   if (DOM.modal) {
@@ -843,7 +848,10 @@ async function searchTMDB() {
   setupContainerDelegation(DOM.searchResults);
 }
 
-/* Initialize Application */
+/* =========================================================
+   APPLICATION INITIALIZATION
+========================================================= */
+
 async function init() {
   initDOMReferences();
 
