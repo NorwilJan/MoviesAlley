@@ -664,11 +664,19 @@ body.modal-open {
   }
 }
 
+/* PLAYER QUICK CONTROLS */
+.player-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 20px 0 10px;
+}
+
 .video-container {
   width: 100%;
   aspect-ratio: 16 / 9;
   background: #000;
-  margin: 20px 0 10px;
+  margin: 0;
   border-radius: 8px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -678,6 +686,43 @@ body.modal-open {
   width: 100%;
   height: 100%;
   border: none;
+}
+
+.player-quick-controls {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+}
+
+.quick-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.quick-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.quick-btn.primary {
+  background: var(--red);
+  border-color: var(--red);
+}
+
+.quick-btn.primary:hover {
+  background: var(--red-dark);
+  box-shadow: 0 0 12px var(--glow);
 }
 
 /* Grid & Search Modals */
