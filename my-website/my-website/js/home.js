@@ -518,17 +518,6 @@ function playNextEpisode() {
   saveCurrentProgress();
 }
 
-function skipIntro() {
-  const iframe = document.getElementById('modal-video');
-  if (iframe && iframe.contentWindow) {
-    try {
-      iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'seekTo', args: [85, true] }), '*');
-    } catch (e) {
-      console.warn('Iframe cross-origin restriction:', e);
-    }
-  }
-}
-
 function toggleFullscreen() {
   const container = document.getElementById('player-container');
   if (!container) return;
