@@ -1,5 +1,5 @@
 /* =========================================================
-   STREAMVAULT — COMPLETE JS ENGINE
+   STREAMVAULT — COMPLETE JS ENGINE (ROBUST & PREVENTATIVE)
 ========================================================= */
 
 const CONFIG = Object.freeze({
@@ -12,16 +12,14 @@ const CONFIG = Object.freeze({
   PLACEHOLDER_IMG: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="130" height="195" fill="%231a1a1a"><rect width="100%" height="100%"/></svg>'
 });
 
-// Category endpoints mapping
-const CATEGORY_MAP = {
+const CATEGORY_MAP = Object.freeze({
   movies: { endpoint: '/trending/movie/week', mediaType: 'movie', title: 'Trending Movies' },
   tv: { endpoint: '/trending/tv/week', mediaType: 'tv', title: 'Trending TV Shows' },
   anime: { endpoint: '/discover/tv', params: { with_original_language: 'ja', with_genres: 16, sort_by: 'popularity.desc' }, mediaType: 'tv', title: 'Popular Anime' },
   tagalog: { endpoint: '/discover/movie', params: { with_original_language: 'tl', sort_by: 'popularity.desc' }, mediaType: 'movie', title: 'Filipino Cinema' },
   kdrama: { endpoint: '/discover/tv', params: { with_original_language: 'ko', sort_by: 'popularity.desc' }, mediaType: 'tv', title: 'Korean Dramas' }
-};
+});
 
-// State Management
 const state = {
   currentItem: null,
   bannerItem: null,
@@ -37,7 +35,6 @@ const state = {
   openedFromGrid: false
 };
 
-// Internal Caches
 const caches = {
   showDetails: new Map(),
   episodes: new Map(),
@@ -48,8 +45,31 @@ let searchTimeout = null;
 let episodeFetchToken = 0;
 
 /* =========================================================
+   SAFE STORAGE HELPERS
+========================================================= */
+
+function getStorage(key, fallback = []) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch (e) {
+    console.warn(`LocalStorage read failed for ${key}:`, e);
+    return fallback;
+  }
+}
+
+function setStorage(key, val) {
+  try {
+    localStorage.setItem(key, JSON.stringify(val));
+  } catch (e) {
+    console.error(`LocalStorage write failed for ${key}:`, e);
+  }
+}
+
+/* =========================================================
    DOM CACHE REFERENCE
 ========================================================= */
+
 const DOM = {};
 
 function initDOMReferences() {
@@ -74,7 +94,7 @@ function initDOMReferences() {
 }
 
 /* =========================================================
-   CACHE HELPERS
+   CACHE & SCROLL LOCK
 ========================================================= */
 
 function getCachedApiData(key) {
@@ -91,16 +111,8 @@ function getCachedApiData(key) {
 }
 
 function setCachedApiData(key, data) {
-  try {
-    localStorage.setItem(`sv_cache_${key}`, JSON.stringify({ data, timestamp: Date.now() }));
-  } catch (e) {
-    console.error('LocalStorage Write Error:', e);
-  }
+  setStorage(`sv_cache_${key}`, { data, timestamp: Date.now() });
 }
-
-/* =========================================================
-   SCROLL LOCK
-========================================================= */
 
 function toggleBodyScroll(lock) {
   document.documentElement.classList.toggle('modal-open', lock);
@@ -115,7 +127,7 @@ async function tmdbFetch(endpoint, params = {}) {
   try {
     const url = new URL(`${CONFIG.BASE_URL}${endpoint}`);
     url.searchParams.set('api_key', CONFIG.API_KEY);
-    Object.entries(params).forEach(([k, v]) => v && url.searchParams.set(k, v));
+    Object.entries(params).forEach(([k, v]) => v !== undefined && url.searchParams.set(k, v));
 
     const res = await fetch(url.toString());
     return res.ok ? await res.json() : null;
@@ -136,7 +148,7 @@ async function fetchCategory(key, endpoint, params = {}) {
 }
 
 /* =========================================================
-   UI RENDERING & EVENT DELEGATION
+   UI RENDERING & DELEGATION
 ========================================================= */
 
 function createPosterCard(item, mediaType) {
@@ -148,6 +160,8 @@ function createPosterCard(item, mediaType) {
   img.decoding = 'async';
   img.setAttribute('role', 'button');
   img.setAttribute('tabindex', '0');
+
+  img.onerror = () => { img.src = CONFIG.PLACEHOLDER_IMG; };
 
   img.dataset.item = JSON.stringify({
     id: item.id,
@@ -210,6 +224,16 @@ function setupContainerDelegation(container) {
       showDetails(JSON.parse(card.dataset.item));
     }
   });
+
+  container.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      const card = e.target.closest('.poster-card');
+      if (card && card.dataset.item) {
+        e.preventDefault();
+        showDetails(JSON.parse(card.dataset.item));
+      }
+    }
+  });
 }
 
 function scrollList(containerId, direction) {
@@ -219,7 +243,6 @@ function scrollList(containerId, direction) {
   }
 }
 
-/* Filter homepage categories */
 function filterContent(category, btn) {
   state.currentTabCategory = category;
   document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
@@ -292,10 +315,12 @@ async function showDetails(item) {
   if (DOM.gridModal?.classList.contains('active')) {
     state.openedFromGrid = true;
     DOM.gridModal.classList.remove('active');
+    DOM.gridModal.setAttribute('aria-hidden', 'true');
   }
 
   if (DOM.modal) {
     DOM.modal.classList.add('active');
+    DOM.modal.setAttribute('aria-hidden', 'false');
     toggleBodyScroll(true);
   }
 
@@ -354,7 +379,7 @@ async function renderExtraDetails(item) {
       trailerContainer.innerHTML = `
         <h3 style="margin-top:20px; font-size:1.1rem;">Official Trailer</h3>
         <div class="video-container" style="margin-top:10px;">
-          <iframe src="https://www.youtube-nocookie.com/embed/${trailer.key}" allowfullscreen loading="lazy"></iframe>
+          <iframe src="https://www.youtube-nocookie.com/embed/${trailer.key}" allowfullscreen title="Trailer"></iframe>
         </div>`;
     }
   }
@@ -446,17 +471,21 @@ function onSeasonChange() {
 
 function closeModal() {
   if (DOM.modalVideo) DOM.modalVideo.src = 'about:blank';
-  if (DOM.modal) DOM.modal.classList.remove('active');
+  if (DOM.modal) {
+    DOM.modal.classList.remove('active');
+    DOM.modal.setAttribute('aria-hidden', 'true');
+  }
   toggleBodyScroll(false);
 
   if (state.openedFromGrid && DOM.gridModal) {
     DOM.gridModal.classList.add('active');
+    DOM.gridModal.setAttribute('aria-hidden', 'false');
     toggleBodyScroll(true);
   }
 }
 
 /* =========================================================
-   SEE ALL GRID MODAL & INFINITE SCROLL
+   GRID MODAL & INFINITE SCROLL
 ========================================================= */
 
 function openGridModal(categoryKey) {
@@ -477,6 +506,7 @@ function openGridModal(categoryKey) {
 
   if (DOM.gridModal) {
     DOM.gridModal.classList.add('active');
+    DOM.gridModal.setAttribute('aria-hidden', 'false');
     toggleBodyScroll(true);
   }
 
@@ -484,7 +514,10 @@ function openGridModal(categoryKey) {
 }
 
 function closeGridModal() {
-  if (DOM.gridModal) DOM.gridModal.classList.remove('active');
+  if (DOM.gridModal) {
+    DOM.gridModal.classList.remove('active');
+    DOM.gridModal.setAttribute('aria-hidden', 'true');
+  }
   toggleBodyScroll(false);
   state.openedFromGrid = false;
 }
@@ -571,11 +604,11 @@ function handleGridScroll() {
 ========================================================= */
 
 function getWatchlist() {
-  try { return JSON.parse(localStorage.getItem('myList')) || []; } catch { return []; }
+  return getStorage('myList', []);
 }
 
 function getContinueWatching() {
-  try { return JSON.parse(localStorage.getItem('continueWatching')) || []; } catch { return []; }
+  return getStorage('continueWatching', []);
 }
 
 function updateWatchlistBadge() {
@@ -593,7 +626,7 @@ function toggleWatchlist() {
   if (idx > -1) list.splice(idx, 1);
   else list.push(state.currentItem);
 
-  localStorage.setItem('myList', JSON.stringify(list));
+  setStorage('myList', list);
   updateWatchlistButton();
   updateWatchlistBadge();
   renderWatchlistRow();
@@ -637,7 +670,7 @@ function saveCurrentProgress() {
   list.unshift(payload);
   if (list.length > 15) list.pop();
 
-  localStorage.setItem('continueWatching', JSON.stringify(list));
+  setStorage('continueWatching', list);
   renderContinueWatchingRow();
 }
 
@@ -682,6 +715,7 @@ function shareCurrentItem() {
 function openSearchModal() {
   if (!DOM.searchModal) return;
   DOM.searchModal.classList.add('active');
+  DOM.searchModal.setAttribute('aria-hidden', 'false');
   toggleBodyScroll(true);
   if (DOM.searchInput) setTimeout(() => DOM.searchInput.focus(), 100);
 }
@@ -689,6 +723,7 @@ function openSearchModal() {
 function closeSearchModal() {
   if (!DOM.searchModal) return;
   DOM.searchModal.classList.remove('active');
+  DOM.searchModal.setAttribute('aria-hidden', 'true');
   toggleBodyScroll(false);
   if (DOM.searchResults) DOM.searchResults.innerHTML = '';
   if (DOM.searchInput) DOM.searchInput.value = '';
@@ -733,7 +768,11 @@ document.addEventListener('keydown', (e) => {
 /* Initialize Application */
 async function init() {
   initDOMReferences();
-  
+
+  if (DOM.gridScrollArea) {
+    DOM.gridScrollArea.addEventListener('scroll', handleGridScroll);
+  }
+
   const [movies, tv, anime, tagalog, kdrama] = await Promise.all([
     fetchCategory('tr_movies', CATEGORY_MAP.movies.endpoint),
     fetchCategory('tr_tv', CATEGORY_MAP.tv.endpoint),
