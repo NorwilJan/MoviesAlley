@@ -21,8 +21,8 @@ const CATEGORY_MAP = Object.freeze({
     endpoint: '/discover/tv', 
     params: { 
       with_original_language: 'ko', 
-      with_type: '2|4',               // 2 = Scripted, 4 = Miniseries (Excludes Variety, Reality, Documentary, News, Talk)
-      without_genres: '10764,10767,10763,99', // 10764=Reality, 10767=Talk, 10763=News, 99=Documentary
+      with_type: '2|4',                  // 2 = Scripted, 4 = Miniseries (Excludes Variety, Reality, Documentary, News, Talk)
+      without_genres: '10764,10767,10763,99,16', // Excludes Reality (10764), Talk (10767), News (10763), Documentary (99), and Animation (16)
       sort_by: 'popularity.desc' 
     }, 
     mediaType: 'tv', 
