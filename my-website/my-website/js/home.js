@@ -1,5 +1,5 @@
 /* =========================================================
-   STREAMVAULT — PRODUCTION JS ENGINE (COMPLETE & INTEGRATED)
+   STREAMVAULT — JS ENGINE (WITH SKELETONS & TOASTS)
 ========================================================= */
 
 const CONFIG = Object.freeze({
@@ -17,10 +17,19 @@ const CATEGORY_MAP = Object.freeze({
   tv: { endpoint: '/trending/tv/week', mediaType: 'tv', title: 'Trending TV Shows' },
   anime: { endpoint: '/discover/tv', params: { with_original_language: 'ja', with_genres: 16, sort_by: 'popularity.desc' }, mediaType: 'tv', title: 'Popular Anime' },
   tagalog: { endpoint: '/discover/movie', params: { with_original_language: 'tl', sort_by: 'popularity.desc' }, mediaType: 'movie', title: 'Filipino Cinema' },
-  kdrama: { endpoint: '/discover/tv', params: { with_original_language: 'ko', sort_by: 'popularity.desc' }, mediaType: 'tv', title: 'Korean Dramas' }
+  kdrama: { 
+    endpoint: '/discover/tv', 
+    params: { 
+      with_original_language: 'ko', 
+      with_type: '2|4',               // 2 = Scripted, 4 = Miniseries (Excludes Variety, Reality, Documentary, News, Talk)
+      without_genres: '10764,10767,10763,99', // 10764=Reality, 10767=Talk, 10763=News, 99=Documentary
+      sort_by: 'popularity.desc' 
+    }, 
+    mediaType: 'tv', 
+    title: 'Korean Dramas' 
+  }
 });
 
-// TMDB Genre Lists
 const MOVIE_GENRES = [
   { id: 'all', name: 'All' },
   { id: '28', name: 'Action' },
@@ -67,7 +76,48 @@ let searchTimeout = null;
 let episodeFetchToken = 0;
 
 /* =========================================================
-   SAFE STORAGE HELPERS
+   UI HELPERS: TOASTS & SKELETONS
+========================================================= */
+
+function showToast(message) {
+  let container = document.getElementById('toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    document.body.appendChild(container);
+  }
+
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = message;
+
+  container.appendChild(toast);
+
+  requestAnimationFrame(() => {
+    toast.classList.add('show');
+  });
+
+  setTimeout(() => {
+    toast.classList.remove('show');
+    toast.addEventListener('transitionend', () => toast.remove());
+  }, 3000);
+}
+
+function renderSkeletons(containerId, count = 8) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+  const fragment = document.createDocumentFragment();
+  for (let i = 0; i < count; i++) {
+    const skeleton = document.createElement('div');
+    skeleton.className = 'skeleton-card';
+    fragment.appendChild(skeleton);
+  }
+  container.appendChild(fragment);
+}
+
+/* =========================================================
+   STORAGE & DOM REFERENCES
 ========================================================= */
 
 function getStorage(key, fallback = []) {
@@ -75,7 +125,6 @@ function getStorage(key, fallback = []) {
     const raw = localStorage.getItem(key);
     return raw ? JSON.parse(raw) : fallback;
   } catch (e) {
-    console.warn(`LocalStorage read failed for ${key}:`, e);
     return fallback;
   }
 }
@@ -84,13 +133,9 @@ function setStorage(key, val) {
   try {
     localStorage.setItem(key, JSON.stringify(val));
   } catch (e) {
-    console.error(`LocalStorage write failed for ${key}:`, e);
+    console.error(`Storage error for ${key}:`, e);
   }
 }
-
-/* =========================================================
-   DOM CACHE REFERENCE
-========================================================= */
 
 const DOM = {};
 
@@ -115,10 +160,6 @@ function initDOMReferences() {
   DOM.searchResults = document.getElementById('search-results');
 }
 
-/* =========================================================
-   CACHE & SCROLL LOCK
-========================================================= */
-
 function getCachedApiData(key) {
   try {
     const raw = localStorage.getItem(`sv_cache_${key}`);
@@ -127,7 +168,7 @@ function getCachedApiData(key) {
     if (Date.now() - timestamp < CONFIG.CACHE_TTL) return data;
     localStorage.removeItem(`sv_cache_${key}`);
   } catch (e) {
-    console.error('LocalStorage Read Error:', e);
+    console.error('Cache read error:', e);
   }
   return null;
 }
@@ -142,7 +183,7 @@ function toggleBodyScroll(lock) {
 }
 
 /* =========================================================
-   API FETCH ENGINE
+   API ENGINE
 ========================================================= */
 
 async function tmdbFetch(endpoint, params = {}) {
@@ -154,7 +195,7 @@ async function tmdbFetch(endpoint, params = {}) {
     const res = await fetch(url.toString());
     return res.ok ? await res.json() : null;
   } catch (err) {
-    console.error('TMDB API Error:', err);
+    console.error('API fetch error:', err);
     return null;
   }
 }
@@ -170,7 +211,7 @@ async function fetchCategory(key, endpoint, params = {}) {
 }
 
 /* =========================================================
-   UI RENDERING & DELEGATION
+   UI CARDS & DELEGATION
 ========================================================= */
 
 function createPosterCard(item, mediaType) {
@@ -389,6 +430,7 @@ function switchServer(serverName) {
     btn.classList.toggle('active', btn.dataset.server === serverName);
   });
   loadVideo();
+  showToast(`Switched server to ${serverName.toUpperCase()}`);
 }
 
 async function renderExtraDetails(item) {
@@ -513,7 +555,7 @@ function closeModal() {
 }
 
 /* =========================================================
-   PLAYBACK QUICK CONTROLS & KEYBOARD SHORTCUTS
+   PLAYBACK CONTROLS & KEYBOARD
 ========================================================= */
 
 function updateQuickControlsVisibility() {
@@ -538,6 +580,7 @@ function playNextEpisode() {
 
   loadVideo();
   saveCurrentProgress();
+  showToast(`Loading Episode ${state.currentEpisode}`);
 }
 
 function toggleFullscreen() {
@@ -552,7 +595,6 @@ function toggleFullscreen() {
   }
 }
 
-/* Global Key Engine */
 document.addEventListener('keydown', (e) => {
   if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
 
@@ -588,7 +630,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 /* =========================================================
-   GRID MODAL & DYNAMIC GENRE FILTERING
+   GRID MODAL & DYNAMIC GENRES
 ========================================================= */
 
 function openGridModal(categoryKey) {
@@ -672,12 +714,9 @@ async function loadGridItems() {
   let endpoint = cat.endpoint;
   const params = { page: state.gridPage, ...(cat.params || {}) };
 
-  // Switch to discover endpoint dynamically when filtering by genre
   if (state.gridSelectedGenre !== 'all') {
     endpoint = `/discover/${cat.mediaType}`;
     params.sort_by = 'popularity.desc';
-    
-    // Combine base genre filters (e.g. Anime genre 16) with selected sub-genre filter
     if (params.with_genres) {
       params.with_genres = `${params.with_genres},${state.gridSelectedGenre}`;
     } else {
@@ -715,7 +754,7 @@ function handleGridScroll() {
 }
 
 /* =========================================================
-   WATCHLIST, HISTORY & SURPRISE ME
+   WATCHLIST & HISTORY WITH TOAST FEEDBACK
 ========================================================= */
 
 function getWatchlist() {
@@ -737,9 +776,15 @@ function toggleWatchlist() {
   if (!state.currentItem) return;
   let list = getWatchlist();
   const idx = list.findIndex(i => i.id === state.currentItem.id);
+  const title = state.currentItem.title || state.currentItem.name;
 
-  if (idx > -1) list.splice(idx, 1);
-  else list.push(state.currentItem);
+  if (idx > -1) {
+    list.splice(idx, 1);
+    showToast(`Removed "${title}" from My List`);
+  } else {
+    list.push(state.currentItem);
+    showToast(`Added "${title}" to My List`);
+  }
 
   setStorage('myList', list);
   updateWatchlistButton();
@@ -767,6 +812,7 @@ function renderWatchlistRow() {
 function clearWatchlist() {
   localStorage.removeItem('myList');
   renderWatchlistRow();
+  showToast('Watchlist cleared');
 }
 
 function saveCurrentProgress() {
@@ -801,6 +847,7 @@ function renderContinueWatchingRow() {
 function clearContinueWatching() {
   localStorage.removeItem('continueWatching');
   renderContinueWatchingRow();
+  showToast('Watch history cleared');
 }
 
 function surpriseMe() {
@@ -819,12 +866,12 @@ function shareCurrentItem() {
     navigator.share({ title: `Watch ${title} on StreamVault`, url: window.location.href }).catch(() => {});
   } else {
     navigator.clipboard.writeText(window.location.href);
-    alert('Link copied to clipboard!');
+    showToast('Link copied to clipboard!');
   }
 }
 
 /* =========================================================
-   SEARCH MODAL DEBOUNCED
+   SEARCH MODAL
 ========================================================= */
 
 function openSearchModal() {
@@ -872,7 +919,7 @@ async function searchTMDB() {
 }
 
 /* =========================================================
-   APPLICATION INITIALIZATION
+   APPLICATION INIT
 ========================================================= */
 
 async function init() {
@@ -881,6 +928,13 @@ async function init() {
   if (DOM.gridScrollArea) {
     DOM.gridScrollArea.addEventListener('scroll', handleGridScroll);
   }
+
+  // Pre-fill rows with skeleton loaders while fetching API data
+  renderSkeletons('movies-list');
+  renderSkeletons('tvshows-list');
+  renderSkeletons('anime-list');
+  renderSkeletons('tagalog-list');
+  renderSkeletons('kdrama-list');
 
   const [movies, tv, anime, tagalog, kdrama] = await Promise.all([
     fetchCategory('tr_movies', CATEGORY_MAP.movies.endpoint),
