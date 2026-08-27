@@ -330,6 +330,7 @@ async function showDetails(item) {
     loadVideo();
   }
 
+  updateQuickControlsVisibility();
   renderExtraDetails(item);
 }
 
@@ -483,6 +484,92 @@ function closeModal() {
     toggleBodyScroll(true);
   }
 }
+
+/* =========================================================
+   PLAYBACK QUICK CONTROLS & KEYBOARD SHORTCUTS
+========================================================= */
+
+function updateQuickControlsVisibility() {
+  const controls = document.getElementById('player-quick-controls');
+  if (!controls) return;
+  const isTv = state.currentItem && (state.currentItem.media_type === 'tv' || !state.currentItem.title);
+  controls.style.display = isTv ? 'flex' : 'none';
+}
+
+function playNextEpisode() {
+  if (!state.currentItem) return;
+
+  state.currentEpisode += 1;
+
+  const container = document.getElementById('episodes-container');
+  if (container) {
+    const buttons = container.querySelectorAll('.episode-btn');
+    buttons.forEach((btn, idx) => {
+      btn.classList.toggle('active', idx + 1 === state.currentEpisode);
+    });
+  }
+
+  loadVideo();
+  saveCurrentProgress();
+}
+
+function skipIntro() {
+  const iframe = document.getElementById('modal-video');
+  if (iframe && iframe.contentWindow) {
+    try {
+      iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'seekTo', args: [85, true] }), '*');
+    } catch (e) {
+      console.warn('Iframe cross-origin restriction:', e);
+    }
+  }
+}
+
+function toggleFullscreen() {
+  const container = document.getElementById('player-container');
+  if (!container) return;
+
+  if (!document.fullscreenElement) {
+    if (container.requestFullscreen) container.requestFullscreen();
+    else if (container.webkitRequestFullscreen) container.webkitRequestFullscreen();
+  } else {
+    if (document.exitFullscreen) document.exitFullscreen();
+  }
+}
+
+/* Global Key Engine */
+document.addEventListener('keydown', (e) => {
+  if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
+
+  const isModalActive = DOM.modal && DOM.modal.classList.contains('active');
+
+  switch (e.key.toLowerCase()) {
+    case 'n':
+      if (isModalActive) {
+        e.preventDefault();
+        playNextEpisode();
+      }
+      break;
+
+    case 'f':
+      if (isModalActive) {
+        e.preventDefault();
+        toggleFullscreen();
+      }
+      break;
+
+    case 'm':
+    case '/':
+      e.preventDefault();
+      openSearchModal();
+      break;
+
+    case 'escape':
+      closeModal();
+      closeGridModal();
+      closeSearchModal();
+      break;
+  }
+});
 
 /* =========================================================
    GRID MODAL & INFINITE SCROLL
@@ -755,15 +842,6 @@ async function searchTMDB() {
   DOM.searchResults.appendChild(fragment);
   setupContainerDelegation(DOM.searchResults);
 }
-
-/* Global Keyboard Handlers */
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    closeModal();
-    closeGridModal();
-    closeSearchModal();
-  }
-});
 
 /* Initialize Application */
 async function init() {
