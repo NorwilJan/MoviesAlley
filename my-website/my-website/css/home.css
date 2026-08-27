@@ -1,5 +1,5 @@
 /* =========================================================
-   STREAMVAULT — PRODUCTION CSS ENGINE
+   STREAMVAULT — PRODUCTION CSS ENGINE (OPTIMIZED)
 ========================================================= */
 
 :root {
@@ -14,9 +14,9 @@
   --muted-dark: #555555;
   --border: rgba(255, 255, 255, 0.08);
   --glow: rgba(229, 9, 20, 0.35);
-  
+
   --poster-width: 150px;
-  --poster-height: 225px;
+  --poster-aspect: 2 / 3;
 }
 
 *, *::before, *::after {
@@ -104,7 +104,8 @@ body.modal-open {
   transition: color 0.2s ease;
 }
 
-.nav-links > a:hover, .nav-links > a.active {
+.nav-links > a:hover, 
+.nav-links > a.active {
   color: #fff;
 }
 
@@ -121,7 +122,8 @@ body.modal-open {
   transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.nav-links > a:hover::after, .nav-links > a.active::after {
+.nav-links > a:hover::after, 
+.nav-links > a.active::after {
   transform: scaleX(1);
 }
 
@@ -412,7 +414,7 @@ body.modal-open {
 
 .poster-card {
   width: var(--poster-width);
-  height: var(--poster-height);
+  aspect-ratio: var(--poster-aspect);
   flex: 0 0 var(--poster-width);
   object-fit: cover;
   border-radius: 8px;
@@ -421,8 +423,8 @@ body.modal-open {
   border: 1px solid rgba(255, 255, 255, 0.05);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
   scroll-snap-align: start;
-  transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1), border-color 0.25s ease, box-shadow 0.25s ease;
   will-change: transform;
+  transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1), border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
 .poster-card:hover {
@@ -463,7 +465,6 @@ body.modal-open {
 @media (min-width: 768px) {
   :root {
     --poster-width: 165px;
-    --poster-height: 248px;
   }
   .list-wrapper:hover .scroll-arrow { display: flex; }
 }
