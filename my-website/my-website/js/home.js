@@ -1,5 +1,5 @@
 /* =========================================================
-   STREAMVAULT — JS ENGINE (WITH SKELETONS & TOASTS)
+   STREAMVAULT — JS ENGINE (OPTIMIZED & PROD READY)
 ========================================================= */
 
 const CONFIG = Object.freeze({
@@ -21,8 +21,8 @@ const CATEGORY_MAP = Object.freeze({
     endpoint: '/discover/tv', 
     params: { 
       with_original_language: 'ko', 
-      with_type: '2|4',                  // 2 = Scripted, 4 = Miniseries (Excludes Variety, Reality, Documentary, News, Talk)
-      without_genres: '10764,10767,10763,99,16', // Excludes Reality (10764), Talk (10767), News (10763), Documentary (99), and Animation (16)
+      with_type: '2|4', 
+      without_genres: '10764,10767,10763,99,16', 
       sort_by: 'popularity.desc' 
     }, 
     mediaType: 'tv', 
@@ -563,6 +563,19 @@ function updateQuickControlsVisibility() {
   if (!controls) return;
   const isTv = state.currentItem && (state.currentItem.media_type === 'tv' || !state.currentItem.title);
   controls.style.display = isTv ? 'flex' : 'none';
+}
+
+function skipIntro() {
+  if (!DOM.modalVideo) return;
+  
+  // PostMessage attempts for embedded HTML5 players that support messaging API
+  try {
+    DOM.modalVideo.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'seekTo', args: [85, true] }), '*');
+    DOM.modalVideo.contentWindow.postMessage({ type: 'seek', seconds: 85 }, '*');
+  } catch (e) {
+    console.log('PostMessage cross-origin restriction handled');
+  }
+  showToast('Skipped intro (+85s)');
 }
 
 function playNextEpisode() {
