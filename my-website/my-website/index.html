@@ -1,71 +1,82 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>StreamVault — Watch Free Movies & TV Shows</title>
-  <link rel="stylesheet" href="css/Home.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StreamVault — Watch Movies & TV Shows</title>
+  <link rel="stylesheet" href="css/home.css" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <script defer src="js/home.js"></script>
 </head>
 <body>
 
   <!-- NAVBAR -->
   <header class="navbar">
-    <div class="nav-container">
-      <div class="nav-left">
-        <a href="#" class="logo">Stream<span>Vault</span></a>
-        <nav class="nav-links">
-          <a href="#" class="active" onclick="filterContent('all', this)">Home</a>
-          <a href="#" onclick="filterContent('movie', this)">Movies</a>
-          <a href="#" onclick="filterContent('tv', this)">TV Shows</a>
-          <a href="#" onclick="filterContent('anime', this)">Anime</a>
-          <a href="#" onclick="openGridModal('watchlist')">My List <span id="watchlist-badge" class="badge">0</span></a>
-        </nav>
-      </div>
+    <a href="#" aria-label="StreamVault Home">
+      <img src="logo.png" alt="StreamVault Logo" />
+    </a>
 
-      <div class="nav-right">
-        <button class="nav-btn" onclick="surpriseMe()" title="Surprise Me">🎲 Surprise</button>
-        <button class="nav-btn" onclick="openSearchModal()" title="Search">🔍 Search</button>
-      </div>
+    <nav class="nav-links">
+      <a href="#" class="active" onclick="filterContent('all', this)">Home</a>
+      <a href="#" onclick="filterContent('movie', this)">Movies</a>
+      <a href="#" onclick="filterContent('tv', this)">TV Shows</a>
+      <a href="#" onclick="filterContent('anime', this)">Anime</a>
+      <a href="#" class="nav-badge-link" onclick="openGridModal('watchlist')">
+        My List <span id="watchlist-badge" class="nav-badge" style="display: none;">0</span>
+      </a>
+    </nav>
+
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <button class="surprise-nav-btn" onclick="surpriseMe()" aria-label="Surprise Me">
+        <i class="fa-solid fa-dice"></i>
+        <span>Surprise</span>
+      </button>
+
+      <input 
+        type="text" 
+        class="search-bar" 
+        placeholder="Search... (Press /)" 
+        onclick="openSearchModal()" 
+        readonly 
+        aria-label="Search media"
+      />
     </div>
   </header>
 
-  <!-- HERO BANNER -->
-  <section id="banner" class="hero-banner">
-    <div class="hero-content">
-      <h1 id="banner-title">Loading...</h1>
-      <div class="hero-buttons">
-        <button class="btn btn-primary" onclick="playBanner()">▶ Play Now</button>
-        <button class="btn btn-secondary" onclick="surpriseMe()">🎲 Random Pick</button>
+  <!-- MAIN BANNER -->
+  <section id="banner" class="banner">
+    <div class="banner-content">
+      <h1 id="banner-title">Loading Featured...</h1>
+      <div class="banner-btn-group">
+        <button class="banner-btn" onclick="playBanner()">
+          <i class="fa-solid fa-play"></i> Watch Now
+        </button>
       </div>
     </div>
   </section>
 
-  <!-- MAIN CONTENT ROWS -->
-  <main class="content-container">
-
+  <!-- MAIN CONTENT CONTAINER -->
+  <main>
     <!-- CONTINUE WATCHING ROW -->
     <section id="continue-row" class="row" style="display: none;">
       <div class="row-header">
         <h2>Continue Watching</h2>
-        <button class="clear-btn" onclick="clearContinueWatching()">Clear History</button>
+        <button class="clear-btn" onclick="clearContinueWatching()">Clear All</button>
       </div>
-      <div class="slider-wrapper">
-        <button class="slider-btn prev-btn" onclick="scrollList('continue-list', -1)">❮</button>
-        <div id="continue-list" class="poster-row"></div>
-        <button class="slider-btn next-btn" onclick="scrollList('continue-list', 1)">❯</button>
+      <div class="list-wrapper">
+        <div id="continue-list" class="list"></div>
       </div>
     </section>
 
     <!-- WATCHLIST ROW -->
     <section id="watchlist-row" class="row" style="display: none;">
       <div class="row-header">
-        <h2>My Watchlist</h2>
-        <button class="clear-btn" onclick="clearWatchlist()">Clear List</button>
+        <h2>My List</h2>
+        <button class="clear-btn" onclick="clearWatchlist()">Clear All</button>
       </div>
-      <div class="slider-wrapper">
-        <button class="slider-btn prev-btn" onclick="scrollList('watchlist-list', -1)">❮</button>
-        <div id="watchlist-list" class="poster-row"></div>
-        <button class="slider-btn next-btn" onclick="scrollList('watchlist-list', 1)">❯</button>
+      <div class="list-wrapper">
+        <div id="watchlist-list" class="list"></div>
       </div>
     </section>
 
@@ -73,12 +84,12 @@
     <section id="movies-row" class="row">
       <div class="row-header">
         <h2>Trending Movies</h2>
-        <a href="#" class="see-all" onclick="openGridModal('movies'); return false;">See All ❯</a>
+        <button class="see-all-btn" onclick="openGridModal('movies')">See All</button>
       </div>
-      <div class="slider-wrapper">
-        <button class="slider-btn prev-btn" onclick="scrollList('movies-list', -1)">❮</button>
-        <div id="movies-list" class="poster-row"></div>
-        <button class="slider-btn next-btn" onclick="scrollList('movies-list', 1)">❯</button>
+      <div class="list-wrapper">
+        <button class="scroll-arrow left" onclick="scrollList('movies-list', -1)" aria-label="Scroll left"><i class="fa-solid fa-chevron-left"></i></button>
+        <div id="movies-list" class="list"></div>
+        <button class="scroll-arrow right" onclick="scrollList('movies-list', 1)" aria-label="Scroll right"><i class="fa-solid fa-chevron-right"></i></button>
       </div>
     </section>
 
@@ -86,141 +97,143 @@
     <section id="tvshows-row" class="row">
       <div class="row-header">
         <h2>Trending TV Shows</h2>
-        <a href="#" class="see-all" onclick="openGridModal('tv'); return false;">See All ❯</a>
+        <button class="see-all-btn" onclick="openGridModal('tv')">See All</button>
       </div>
-      <div class="slider-wrapper">
-        <button class="slider-btn prev-btn" onclick="scrollList('tvshows-list', -1)">❮</button>
-        <div id="tvshows-list" class="poster-row"></div>
-        <button class="slider-btn next-btn" onclick="scrollList('tvshows-list', 1)">❯</button>
+      <div class="list-wrapper">
+        <button class="scroll-arrow left" onclick="scrollList('tvshows-list', -1)" aria-label="Scroll left"><i class="fa-solid fa-chevron-left"></i></button>
+        <div id="tvshows-list" class="list"></div>
+        <button class="scroll-arrow right" onclick="scrollList('tvshows-list', 1)" aria-label="Scroll right"><i class="fa-solid fa-chevron-right"></i></button>
       </div>
     </section>
 
-    <!-- POPULAR ANIME -->
+    <!-- ANIME ROW -->
     <section id="anime-row" class="row">
       <div class="row-header">
         <h2>Popular Anime</h2>
-        <a href="#" class="see-all" onclick="openGridModal('anime'); return false;">See All ❯</a>
+        <button class="see-all-btn" onclick="openGridModal('anime')">See All</button>
       </div>
-      <div class="slider-wrapper">
-        <button class="slider-btn prev-btn" onclick="scrollList('anime-list', -1)">❮</button>
-        <div id="anime-list" class="poster-row"></div>
-        <button class="slider-btn next-btn" onclick="scrollList('anime-list', 1)">❯</button>
+      <div class="list-wrapper">
+        <button class="scroll-arrow left" onclick="scrollList('anime-list', -1)" aria-label="Scroll left"><i class="fa-solid fa-chevron-left"></i></button>
+        <div id="anime-list" class="list"></div>
+        <button class="scroll-arrow right" onclick="scrollList('anime-list', 1)" aria-label="Scroll right"><i class="fa-solid fa-chevron-right"></i></button>
       </div>
     </section>
 
-    <!-- FILIPINO CINEMA -->
+    <!-- TAGALOG MOVIES -->
     <section id="tagalog-row" class="row">
       <div class="row-header">
         <h2>Filipino Cinema</h2>
-        <a href="#" class="see-all" onclick="openGridModal('tagalog'); return false;">See All ❯</a>
+        <button class="see-all-btn" onclick="openGridModal('tagalog')">See All</button>
       </div>
-      <div class="slider-wrapper">
-        <button class="slider-btn prev-btn" onclick="scrollList('tagalog-list', -1)">❮</button>
-        <div id="tagalog-list" class="poster-row"></div>
-        <button class="slider-btn next-btn" onclick="scrollList('tagalog-list', 1)">❯</button>
+      <div class="list-wrapper">
+        <button class="scroll-arrow left" onclick="scrollList('tagalog-list', -1)" aria-label="Scroll left"><i class="fa-solid fa-chevron-left"></i></button>
+        <div id="tagalog-list" class="list"></div>
+        <button class="scroll-arrow right" onclick="scrollList('tagalog-list', 1)" aria-label="Scroll right"><i class="fa-solid fa-chevron-right"></i></button>
       </div>
     </section>
 
-    <!-- KOREAN DRAMAS -->
+    <!-- K-DRAMA ROW -->
     <section id="kdrama-row" class="row">
       <div class="row-header">
         <h2>Korean Dramas</h2>
-        <a href="#" class="see-all" onclick="openGridModal('kdrama'); return false;">See All ❯</a>
+        <button class="see-all-btn" onclick="openGridModal('kdrama')">See All</button>
       </div>
-      <div class="slider-wrapper">
-        <button class="slider-btn prev-btn" onclick="scrollList('kdrama-list', -1)">❮</button>
-        <div id="kdrama-list" class="poster-row"></div>
-        <button class="slider-btn next-btn" onclick="scrollList('kdrama-list', 1)">❯</button>
+      <div class="list-wrapper">
+        <button class="scroll-arrow left" onclick="scrollList('kdrama-list', -1)" aria-label="Scroll left"><i class="fa-solid fa-chevron-left"></i></button>
+        <div id="kdrama-list" class="list"></div>
+        <button class="scroll-arrow right" onclick="scrollList('kdrama-list', 1)" aria-label="Scroll right"><i class="fa-solid fa-chevron-right"></i></button>
       </div>
     </section>
-
   </main>
 
-  <!-- DETAILS & PLAYER MODAL -->
-  <div id="modal" class="modal" aria-hidden="true">
+  <!-- DETAILS MODAL -->
+  <div id="modal" class="modal" role="dialog" aria-hidden="true">
     <div class="modal-content">
-      <button class="close-btn" onclick="closeModal()">✖</button>
-
+      <button class="close" onclick="closeModal()" aria-label="Close modal">&times;</button>
       <div class="modal-body">
-        <!-- PLAYER CONTAINER -->
-        <div id="player-container" class="player-container">
-          <iframe id="modal-video" src="about:blank" allowfullscreen title="Video Player"></iframe>
+        <img id="modal-image" src="" alt="Poster" />
+        <div class="modal-text">
+          <h2 id="modal-title"></h2>
+          <div id="modal-rating" class="stars"></div>
+          <p id="modal-description"></p>
           
-          <!-- QUICK CONTROLS -->
-          <div id="player-quick-controls" class="quick-controls" style="display: none;">
-            <button class="ctrl-btn" onclick="playNextEpisode()">⏭ Next Ep</button>
-            <button class="ctrl-btn" onclick="toggleFullscreen()">⛶ Fullscreen</button>
+          <div class="modal-actions-inline">
+            <button id="watchlist-btn" class="watchlist-btn" onclick="toggleWatchlist()">Add to List</button>
+            <button class="share-btn" onclick="shareCurrentItem()"><i class="fa-solid fa-share"></i> Share</button>
           </div>
-        </div>
 
-        <!-- SERVER SWITCHER -->
-        <div class="server-bar">
-          <span>Server:</span>
-          <button class="server-btn active" data-server="videasy" onclick="switchServer('videasy')">Videasy</button>
-          <button class="server-btn" data-server="vidsrc" onclick="switchServer('vidsrc')">VidSrc</button>
-          <button class="server-btn" data-server="vidsrcpro" onclick="switchServer('vidsrcpro')">VidSrc Pro</button>
-        </div>
-
-        <!-- TV OPTIONS -->
-        <div id="series-options" class="series-options" style="display: none;">
-          <div class="season-picker">
-            <label for="season-select">Season:</label>
-            <select id="season-select" onchange="onSeasonChange()"></select>
-          </div>
-          <div id="episodes-container" class="episodes-grid"></div>
-        </div>
-
-        <!-- DETAILS INFO -->
-        <div class="details-info">
-          <div class="details-header">
-            <img id="modal-image" src="" alt="Poster" class="modal-poster">
-            <div class="details-meta">
-              <h2 id="modal-title"></h2>
-              <div id="modal-rating" class="rating"></div>
-              <p id="modal-description" class="overview"></p>
-              <div class="modal-actions">
-                <button id="watchlist-btn" class="btn btn-secondary" onclick="toggleWatchlist()">Add to List</button>
-                <button class="btn btn-secondary" onclick="shareCurrentItem()">🔗 Share</button>
-              </div>
+          <div id="series-options" class="series-options" style="display: none;">
+            <div class="select-wrapper">
+              <label for="season-select">Season:</label>
+              <select id="season-select" onchange="onSeasonChange()"></select>
             </div>
+            <div id="episodes-container" class="episodes-container"></div>
           </div>
 
-          <!-- TRAILER & CAST -->
-          <div id="modal-trailer-container"></div>
-          <div id="modal-cast-container"></div>
+          <div class="server-switcher">
+            <span>Server:</span>
+            <button class="server-btn active" data-server="videasy" onclick="switchServer('videasy')">Server 1</button>
+            <button class="server-btn" data-server="vidsrc" onclick="switchServer('vidsrc')">Server 2</button>
+            <button class="server-btn" data-server="vidsrcpro" onclick="switchServer('vidsrcpro')">Server 3</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PLAYER CONTAINER & INLINE CONTROLS -->
+      <div class="player-wrapper">
+        <div id="player-container" class="video-container">
+          <iframe id="modal-video" src="about:blank" allowfullscreen title="Video Player"></iframe>
         </div>
 
+        <div id="player-quick-controls" class="player-quick-controls" style="display: none;">
+          <button class="quick-btn" onclick="skipIntro()">
+            <i class="fa-solid fa-forward-step"></i> Skip Intro (+85s)
+          </button>
+          <button class="quick-btn primary" onclick="playNextEpisode()">
+            <span>Next Episode</span> <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
       </div>
+
+      <!-- TRAILER AND CAST CONTAINER -->
+      <div id="modal-trailer-container"></div>
+      <div id="modal-cast-container"></div>
     </div>
   </div>
 
-  <!-- GRID / SEE ALL MODAL -->
-  <div id="grid-modal" class="modal" aria-hidden="true">
-    <div class="modal-content grid-modal-content">
-      <div class="grid-header">
-        <h2 id="grid-modal-title">Browse All</h2>
-        <button class="close-btn" onclick="closeGridModal()">✖</button>
-      </div>
-
+  <!-- SEE ALL GRID MODAL -->
+  <div id="grid-modal" class="grid-modal" role="dialog" aria-hidden="true">
+    <button class="close" onclick="closeGridModal()" aria-label="Close Modal">&times;</button>
+    <div class="grid-header">
+      <h2 id="grid-modal-title">Category Details</h2>
       <div id="genre-tabs" class="genre-tabs"></div>
-
-      <div id="grid-scroll-area" class="grid-scroll-area">
-        <div id="grid-modal-results" class="grid-results"></div>
-      </div>
+    </div>
+    <div id="grid-scroll-area" class="grid-scroll-area">
+      <div id="grid-modal-results" class="grid-container"></div>
     </div>
   </div>
 
   <!-- SEARCH MODAL -->
-  <div id="search-modal" class="modal" aria-hidden="true">
-    <div class="modal-content search-modal-content">
-      <div class="search-header">
-        <input type="text" id="search-input" placeholder="Search movies, TV shows, anime..." oninput="debounceSearch()" autofocus>
-        <button class="close-btn" onclick="closeSearchModal()">✖</button>
-      </div>
-      <div id="search-results" class="grid-results search-results-grid"></div>
+  <div id="search-modal" class="search-modal" role="dialog" aria-hidden="true">
+    <button class="close" onclick="closeSearchModal()" aria-label="Close Search">&times;</button>
+    <div class="search-input-wrapper">
+      <input 
+        type="text" 
+        id="search-input" 
+        placeholder="Type movie or show name..." 
+        oninput="debounceSearch()" 
+        aria-label="Search Input"
+      />
     </div>
+    <div id="search-results" class="results"></div>
   </div>
 
-  <script src="js/Home.js"></script>
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-content">
+      <p>&copy; 2026 StreamVault. All rights reserved.</p>
+    </div>
+  </footer>
+
 </body>
 </html>
