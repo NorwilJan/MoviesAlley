@@ -36,7 +36,7 @@
       <input 
         type="text" 
         class="search-bar" 
-        placeholder="Search..." 
+        placeholder="Search... (Press /)" 
         onclick="openSearchModal()" 
         readonly 
         aria-label="Search media"
@@ -179,9 +179,20 @@
         </div>
       </div>
 
-      <!-- PLAYER CONTAINER -->
-      <div class="video-container">
-        <iframe id="modal-video" src="about:blank" allowfullscreen title="Video Player"></iframe>
+      <!-- PLAYER CONTAINER & INLINE CONTROLS -->
+      <div class="player-wrapper">
+        <div id="player-container" class="video-container">
+          <iframe id="modal-video" src="about:blank" allowfullscreen title="Video Player"></iframe>
+        </div>
+
+        <div id="player-quick-controls" class="player-quick-controls" style="display: none;">
+          <button class="quick-btn" onclick="skipIntro()">
+            <i class="fa-solid fa-forward-step"></i> Skip Intro (+85s)
+          </button>
+          <button class="quick-btn primary" onclick="playNextEpisode()">
+            <span>Next Episode</span> <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
       </div>
 
       <!-- TRAILER AND CAST CONTAINER -->
