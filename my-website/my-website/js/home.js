@@ -20,6 +20,28 @@ const CATEGORY_MAP = Object.freeze({
   kdrama: { endpoint: '/discover/tv', params: { with_original_language: 'ko', sort_by: 'popularity.desc' }, mediaType: 'tv', title: 'Korean Dramas' }
 });
 
+// TMDB Genre Lists
+const MOVIE_GENRES = [
+  { id: 'all', name: 'All' },
+  { id: '28', name: 'Action' },
+  { id: '35', name: 'Comedy' },
+  { id: '18', name: 'Drama' },
+  { id: '878', name: 'Sci-Fi' },
+  { id: '27', name: 'Horror' },
+  { id: '10749', name: 'Romance' },
+  { id: '53', name: 'Thriller' }
+];
+
+const TV_GENRES = [
+  { id: 'all', name: 'All' },
+  { id: '10759', name: 'Action & Adventure' },
+  { id: '35', name: 'Comedy' },
+  { id: '18', name: 'Drama' },
+  { id: '10765', name: 'Sci-Fi & Fantasy' },
+  { id: '9648', name: 'Mystery' },
+  { id: '10768', name: 'War & Politics' }
+];
+
 const state = {
   currentItem: null,
   bannerItem: null,
@@ -566,7 +588,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 /* =========================================================
-   GRID MODAL & INFINITE SCROLL
+   GRID MODAL & DYNAMIC GENRE FILTERING
 ========================================================= */
 
 function openGridModal(categoryKey) {
@@ -605,14 +627,8 @@ function closeGridModal() {
 
 function renderGenreTabs() {
   if (!DOM.genreTabs) return;
-  const genres = [
-    { id: 'all', name: 'All' },
-    { id: '28', name: 'Action' },
-    { id: '35', name: 'Comedy' },
-    { id: '18', name: 'Drama' },
-    { id: '878', name: 'Sci-Fi' },
-    { id: '27', name: 'Horror' }
-  ];
+  const cat = CATEGORY_MAP[state.gridCategory];
+  const genres = (cat && cat.mediaType === 'tv') ? TV_GENRES : MOVIE_GENRES;
 
   DOM.genreTabs.innerHTML = genres.map(g => `
     <button class="genre-btn ${g.id === state.gridSelectedGenre ? 'active' : ''}" onclick="selectGridGenre('${g.id}')">
@@ -622,9 +638,11 @@ function renderGenreTabs() {
 }
 
 function selectGridGenre(genreId) {
+  if (state.gridSelectedGenre === genreId) return;
   state.gridSelectedGenre = genreId;
   state.gridPage = 1;
   state.gridHasMore = true;
+  state.gridLoading = false;
   if (DOM.gridResults) DOM.gridResults.innerHTML = '';
   renderGenreTabs();
   loadGridItems();
@@ -651,10 +669,23 @@ async function loadGridItems() {
   const cat = CATEGORY_MAP[state.gridCategory];
   if (!cat) { state.gridLoading = false; return; }
 
+  let endpoint = cat.endpoint;
   const params = { page: state.gridPage, ...(cat.params || {}) };
-  if (state.gridSelectedGenre !== 'all') params.with_genres = state.gridSelectedGenre;
 
-  const data = await tmdbFetch(cat.endpoint, params);
+  // Switch to discover endpoint dynamically when filtering by genre
+  if (state.gridSelectedGenre !== 'all') {
+    endpoint = `/discover/${cat.mediaType}`;
+    params.sort_by = 'popularity.desc';
+    
+    // Combine base genre filters (e.g. Anime genre 16) with selected sub-genre filter
+    if (params.with_genres) {
+      params.with_genres = `${params.with_genres},${state.gridSelectedGenre}`;
+    } else {
+      params.with_genres = state.gridSelectedGenre;
+    }
+  }
+
+  const data = await tmdbFetch(endpoint, params);
   const results = data?.results || [];
 
   if (results.length && DOM.gridResults) {
@@ -667,13 +698,16 @@ async function loadGridItems() {
     state.gridPage++;
   } else {
     state.gridHasMore = false;
+    if (state.gridPage === 1 && DOM.gridResults) {
+      DOM.gridResults.innerHTML = `<p style="grid-column:1/-1; text-align:center; color:#777; padding:40px 0;">No titles found for this genre.</p>`;
+    }
   }
 
   state.gridLoading = false;
 }
 
 function handleGridScroll() {
-  if (!DOM.gridScrollArea || state.gridLoading) return;
+  if (!DOM.gridScrollArea || state.gridLoading || !state.gridHasMore) return;
   const { scrollTop, scrollHeight, clientHeight } = DOM.gridScrollArea;
   if (scrollTop + clientHeight >= scrollHeight - 300) {
     loadGridItems();
