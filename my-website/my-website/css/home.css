@@ -1,5 +1,5 @@
 /* =========================================================
-   STREAMVAULT — PRODUCTION CSS ENGINE (OPTIMIZED)
+   STREAMVAULT — PRODUCTION CSS ENGINE (UPDATED)
 ========================================================= */
 
 :root {
@@ -467,6 +467,55 @@ body.modal-open {
     --poster-width: 165px;
   }
   .list-wrapper:hover .scroll-arrow { display: flex; }
+}
+
+/* SKELETON LOADERS */
+.skeleton-card {
+  width: var(--poster-width);
+  aspect-ratio: var(--poster-aspect);
+  flex: 0 0 var(--poster-width);
+  border-radius: 8px;
+  background: linear-gradient(90deg, #161616 25%, #222222 50%, #161616 75%);
+  background-size: 200% 100%;
+  animation: skeleton-pulse 1.5s infinite;
+}
+
+@keyframes skeleton-pulse {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* TOAST NOTIFICATIONS */
+#toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 3000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.toast {
+  background: rgba(22, 22, 22, 0.95);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-left: 4px solid var(--red);
+  padding: 12px 20px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+  backdrop-filter: blur(8px);
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 /* =========================================================
