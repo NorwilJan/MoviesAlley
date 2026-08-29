@@ -1,5 +1,5 @@
 /* =========================================================
-   STREAMVAULT — JS ENGINE (OPTIMIZED & PROD READY)
+   REELROOM — JS ENGINE (OPTIMIZED & PROD READY)
 ========================================================= */
 
 const CONFIG = Object.freeze({
@@ -58,7 +58,7 @@ const state = {
   currentEpisode: 1,
   maxEpisodesInSeason: 0,
   currentTabCategory: 'all',
-  currentServer: 'vidcore',
+  currentServer: 'vidlink', // Default server switched to Vidlink
   gridCategory: null,
   gridPage: 1,
   gridLoading: false,
@@ -412,21 +412,21 @@ function loadVideo() {
   const isTv = state.currentItem.media_type === 'tv' || !state.currentItem.title;
   let embedURL = '';
 
-  if (state.currentServer === 'vidcore') {
-    // Server 1: Vidcore (Updated to domain: vidcore.org)
+  if (state.currentServer === 'vidlink') {
+    // Server 1: Vidlink (Default - lowest ad count)
     embedURL = isTv 
-      ? `https://vidcore.org/embed/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}`
-      : `https://vidcore.org/embed/movie/${state.currentItem.id}`;
+      ? `https://vidlink.pro/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}?primaryColor=e50914&autoplay=false`
+      : `https://vidlink.pro/movie/${state.currentItem.id}?primaryColor=e50914&autoplay=false`;
   } else if (state.currentServer === 'videasy') {
-    // Server 3: Videasy
+    // Server 2: Videasy
     embedURL = isTv 
       ? `https://videasy.net/embed/tv?tmdb=${state.currentItem.id}&season=${state.currentSeason}&episode=${state.currentEpisode}`
       : `https://videasy.net/embed/movie?tmdb=${state.currentItem.id}`;
   } else {
-    // Server 2: Vidlink
+    // Server 3: Vidcore (Updated domain)
     embedURL = isTv 
-      ? `https://vidlink.pro/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}?primaryColor=e50914&autoplay=false`
-      : `https://vidlink.pro/movie/${state.currentItem.id}?primaryColor=e50914&autoplay=false`;
+      ? `https://vidcore.org/embed/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}`
+      : `https://vidcore.org/embed/movie/${state.currentItem.id}`;
   }
 
   if (DOM.modalVideo.src !== embedURL) DOM.modalVideo.src = embedURL;
@@ -901,7 +901,7 @@ function clearContinueWatching() {
 function surpriseMe() {
   const pool = [...caches.fullData.movies, ...caches.fullData.tv, ...caches.fullData.anime];
   if (pool.length) {
-    const randomItem = pool[Math.floor(Math.random() * pool.length)];
+    const randomItem = pool[Math.floor(Math.random() * Math.min(10, pool.length))];
     state.openedFromGrid = false;
     showDetails(randomItem);
   }
@@ -911,7 +911,7 @@ function shareCurrentItem() {
   if (!state.currentItem) return;
   const title = state.currentItem.title || state.currentItem.name;
   if (navigator.share) {
-    navigator.share({ title: `Watch ${title} on StreamVault`, url: window.location.href }).catch(() => {});
+    navigator.share({ title: `Watch ${title} on ReelRoom`, url: window.location.href }).catch(() => {});
   } else {
     navigator.clipboard.writeText(window.location.href);
     showToast('Link copied to clipboard!');
