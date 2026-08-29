@@ -4,10 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>StreamVault — Watch Movies & TV Shows</title>
-  <link rel="stylesheet" href="css/home.css" />
+  <link rel="stylesheet" href="Home.css" />
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <script defer src="js/home.js"></script>
+  <script defer src="Home.js"></script>
 </head>
 <body>
 
@@ -157,6 +157,9 @@
           <div id="modal-rating" class="stars"></div>
           <p id="modal-description"></p>
           
+          <!-- DYNAMIC RESUME PLAYBACK BANNER CONTAINER -->
+          <div id="modal-resume-container" style="display: none; margin: 10px 0;"></div>
+
           <div class="modal-actions-inline">
             <button id="watchlist-btn" class="watchlist-btn" onclick="toggleWatchlist()">Add to List</button>
             <button class="share-btn" onclick="shareCurrentItem()"><i class="fa-solid fa-share"></i> Share</button>
