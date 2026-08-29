@@ -77,8 +77,22 @@ let searchTimeout = null;
 let episodeFetchToken = 0;
 
 /* =========================================================
-   UI HELPERS: TOASTS & SKELETONS
+   UI HELPERS & CACHE EVICTION
 ========================================================= */
+
+function clearExpiredCache() {
+  const now = Date.now();
+  Object.keys(localStorage).forEach(key => {
+    if (key.startsWith('sv_cache_')) {
+      try {
+        const { timestamp } = JSON.parse(localStorage.getItem(key));
+        if (now - timestamp > CONFIG.CACHE_TTL) localStorage.removeItem(key);
+      } catch (e) {
+        localStorage.removeItem(key);
+      }
+    }
+  });
+}
 
 function showToast(message) {
   let container = document.getElementById('toast-container');
@@ -339,7 +353,7 @@ function filterContent(category, btn) {
 }
 
 /* =========================================================
-   BANNER & DETAILS MODAL
+   BANNER & DETAILS MODAL (WITH RESUME SUPPORT)
 ========================================================= */
 
 function displayBanner(item) {
@@ -354,6 +368,56 @@ function playBanner() {
     state.openedFromGrid = false;
     showDetails(state.bannerItem);
   }
+}
+
+function formatTime(seconds) {
+  if (!seconds || isNaN(seconds)) return '0m';
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+
+function renderResumePrompt(item) {
+  const history = getContinueWatching();
+  const saved = history.find(i => i.id === item.id);
+  const resumeContainer = document.getElementById('modal-resume-container');
+
+  if (!resumeContainer) return;
+
+  if (saved && (saved.savedSeason || saved.savedTime > 0)) {
+    const isTv = item.media_type === 'tv' || !item.title;
+    const progressLabel = isTv 
+      ? `Season ${saved.savedSeason || 1}, Episode ${saved.savedEpisode || 1}` 
+      : `at ${formatTime(saved.savedTime)}`;
+
+    resumeContainer.style.display = 'block';
+    resumeContainer.innerHTML = `
+      <div class="resume-banner">
+        <span><i class="fa-solid fa-rotate-left"></i> Resume ${progressLabel}</span>
+        <button class="quick-btn primary" onclick="resumePlayback(${saved.savedSeason || 1}, ${saved.savedEpisode || 1}, ${saved.savedTime || 0})">
+          Resume
+        </button>
+      </div>
+    `;
+  } else {
+    resumeContainer.style.display = 'none';
+    resumeContainer.innerHTML = '';
+  }
+}
+
+function resumePlayback(season, episode, timestamp) {
+  state.currentSeason = season;
+  state.currentEpisode = episode;
+  
+  const select = document.getElementById('season-select');
+  if (select) select.value = season;
+
+  loadVideo(timestamp);
+  showToast(`Resumed from ${formatTime(timestamp)}`);
 }
 
 async function showDetails(item) {
@@ -374,6 +438,7 @@ async function showDetails(item) {
   }
 
   updateWatchlistButton();
+  renderResumePrompt(item);
   saveCurrentProgress();
 
   const isTv = item.media_type === 'tv' || !item.title;
@@ -407,15 +472,17 @@ async function showDetails(item) {
   renderExtraDetails(item);
 }
 
-function loadVideo() {
+function loadVideo(startTime = 0) {
   if (!state.currentItem || !DOM.modalVideo) return;
   const isTv = state.currentItem.media_type === 'tv' || !state.currentItem.title;
   let embedURL = '';
 
+  const timeParam = startTime > 0 ? `&t=${Math.floor(startTime)}` : '';
+
   if (state.currentServer === 'vidsrc') {
     embedURL = isTv 
-      ? `https://vidsrc.xyz/embed/tv?tmdb=${state.currentItem.id}&season=${state.currentSeason}&episode=${state.currentEpisode}`
-      : `https://vidsrc.xyz/embed/movie?tmdb=${state.currentItem.id}`;
+      ? `https://vidsrc.xyz/embed/tv?tmdb=${state.currentItem.id}&season=${state.currentSeason}&episode=${state.currentEpisode}${timeParam}`
+      : `https://vidsrc.xyz/embed/movie?tmdb=${state.currentItem.id}${timeParam}`;
   } else if (state.currentServer === 'vidsrcpro') {
     embedURL = isTv 
       ? `https://vidsrc.pro/embed/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}`
@@ -860,7 +927,7 @@ function clearWatchlist() {
   showToast('Watchlist cleared');
 }
 
-function saveCurrentProgress() {
+function saveCurrentProgress(currentTime = 0) {
   if (!state.currentItem) return;
   let list = getContinueWatching();
   const idx = list.findIndex(i => i.id === state.currentItem.id);
@@ -869,12 +936,13 @@ function saveCurrentProgress() {
     ...state.currentItem,
     savedSeason: state.currentSeason,
     savedEpisode: state.currentEpisode,
+    savedTime: currentTime || (idx > -1 ? list[idx].savedTime || 0 : 0),
     lastWatched: Date.now()
   };
 
   if (idx > -1) list.splice(idx, 1);
   list.unshift(payload);
-  if (list.length > 15) list.pop();
+  if (list.length > 20) list.pop();
 
   setStorage('continueWatching', list);
   renderContinueWatchingRow();
@@ -968,6 +1036,7 @@ async function searchTMDB() {
 ========================================================= */
 
 async function init() {
+  clearExpiredCache();
   initDOMReferences();
 
   if (DOM.gridScrollArea) {
