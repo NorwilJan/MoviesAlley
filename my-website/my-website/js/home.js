@@ -57,7 +57,7 @@ const state = {
   currentSeason: 1,
   currentEpisode: 1,
   currentTabCategory: 'all',
-  currentServer: 'videasy',
+  currentServer: 'vidlink',
   gridCategory: null,
   gridPage: 1,
   gridLoading: false,
@@ -407,18 +407,21 @@ function loadVideo() {
   const isTv = state.currentItem.media_type === 'tv' || !state.currentItem.title;
   let embedURL = '';
 
-  if (state.currentServer === 'vidsrc') {
+  if (state.currentServer === 'vidcore') {
+    // Server 2: VidCore Engine
     embedURL = isTv 
-      ? `https://vidsrc.xyz/embed/tv?tmdb=${state.currentItem.id}&season=${state.currentSeason}&episode=${state.currentEpisode}`
-      : `https://vidsrc.xyz/embed/movie?tmdb=${state.currentItem.id}`;
-  } else if (state.currentServer === 'vidsrcpro') {
+      ? `https://vidcore.org/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}`
+      : `https://vidcore.org/movie/${state.currentItem.id}`;
+  } else if (state.currentServer === 'superembed') {
+    // Server 3: SuperEmbed Engine
     embedURL = isTv 
-      ? `https://vidsrc.pro/embed/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}`
-      : `https://vidsrc.pro/embed/movie/${state.currentItem.id}`;
+      ? `https://multiembed.mov/directstream.php?video_id=${state.currentItem.id}&tmdb=1&s=${state.currentSeason}&e=${state.currentEpisode}`
+      : `https://multiembed.mov/directstream.php?video_id=${state.currentItem.id}&tmdb=1`;
   } else {
+    // Server 1 (Default): VidLink Engine
     embedURL = isTv 
-      ? `https://player.videasy.net/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}`
-      : `https://player.videasy.net/movie/${state.currentItem.id}`;
+      ? `https://vidlink.pro/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}?primaryColor=e50914&autoplay=false`
+      : `https://vidlink.pro/movie/${state.currentItem.id}?primaryColor=e50914&autoplay=false`;
   }
 
   if (DOM.modalVideo.src !== embedURL) DOM.modalVideo.src = embedURL;
@@ -568,7 +571,6 @@ function updateQuickControlsVisibility() {
 function skipIntro() {
   if (!DOM.modalVideo) return;
   
-  // PostMessage attempts for embedded HTML5 players that support messaging API
   try {
     DOM.modalVideo.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'seekTo', args: [85, true] }), '*');
     DOM.modalVideo.contentWindow.postMessage({ type: 'seek', seconds: 85 }, '*');
@@ -942,7 +944,6 @@ async function init() {
     DOM.gridScrollArea.addEventListener('scroll', handleGridScroll);
   }
 
-  // Pre-fill rows with skeleton loaders while fetching API data
   renderSkeletons('movies-list');
   renderSkeletons('tvshows-list');
   renderSkeletons('anime-list');
