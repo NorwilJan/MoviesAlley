@@ -56,8 +56,9 @@ const state = {
   bannerItem: null,
   currentSeason: 1,
   currentEpisode: 1,
+  maxEpisodesInSeason: 0,
   currentTabCategory: 'all',
-  currentServer: 'vidlink', // Replaced videasy with vidlink
+  currentServer: 'vidlink',
   gridCategory: null,
   gridPage: 1,
   gridLoading: false,
@@ -272,7 +273,7 @@ function setupContainerDelegation(container) {
   container.addEventListener('mousemove', (e) => {
     if (!container.classList.contains('dragging')) return;
     const x = e.pageX - container.offsetLeft;
-    if (Math.abs(x - startX) > 5) isDragging = true;
+    if (Math.abs(x - startX) > 6) isDragging = true;
     container.scrollLeft = scrollLeft - (x - startX) * 1.2;
   });
 
@@ -281,7 +282,11 @@ function setupContainerDelegation(container) {
   container.addEventListener('mouseleave', stopDrag);
 
   container.addEventListener('click', (e) => {
-    if (isDragging) return;
+    if (isDragging) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
     const card = e.target.closest('.poster-card');
     if (card && card.dataset.item) {
       showDetails(JSON.parse(card.dataset.item));
@@ -416,7 +421,6 @@ function loadVideo() {
       ? `https://vidsrc.pro/embed/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}`
       : `https://vidsrc.pro/embed/movie/${state.currentItem.id}`;
   } else {
-    // VidLink Engine (Primary Server Replacement for Videasy)
     embedURL = isTv 
       ? `https://vidlink.pro/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}?primaryColor=e50914&autoplay=false`
       : `https://vidlink.pro/movie/${state.currentItem.id}?primaryColor=e50914&autoplay=false`;
@@ -514,6 +518,7 @@ async function loadEpisodes(tvId, seasonNumber) {
   if (token !== episodeFetchToken) return;
 
   if (data?.episodes?.length) {
+    state.maxEpisodesInSeason = data.episodes.length;
     const fragment = document.createDocumentFragment();
     data.episodes.forEach(ep => {
       const btn = document.createElement('button');
@@ -529,6 +534,8 @@ async function loadEpisodes(tvId, seasonNumber) {
       fragment.appendChild(btn);
     });
     container.appendChild(fragment);
+  } else {
+    state.maxEpisodesInSeason = 0;
   }
   loadVideo();
 }
@@ -573,7 +580,7 @@ function skipIntro() {
     DOM.modalVideo.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'seekTo', args: [85, true] }), '*');
     DOM.modalVideo.contentWindow.postMessage({ type: 'seek', seconds: 85 }, '*');
   } catch (e) {
-    console.log('PostMessage cross-origin restriction handled');
+    // Suppress cross-origin postMessage restrictions
   }
   showToast('Skipped intro (+85s)');
 }
@@ -581,13 +588,31 @@ function skipIntro() {
 function playNextEpisode() {
   if (!state.currentItem) return;
 
+  if (state.maxEpisodesInSeason > 0 && state.currentEpisode >= state.maxEpisodesInSeason) {
+    const select = document.getElementById('season-select');
+    if (select && select.options.length > 0) {
+      const currentIndex = select.selectedIndex;
+      if (currentIndex < select.options.length - 1) {
+        select.selectedIndex = currentIndex + 1;
+        state.currentSeason = parseInt(select.value, 10);
+        state.currentEpisode = 1;
+        loadEpisodes(state.currentItem.id, state.currentSeason);
+        showToast(`Loading Season ${state.currentSeason} Episode 1`);
+        return;
+      }
+    }
+    showToast('Already at the latest episode');
+    return;
+  }
+
   state.currentEpisode += 1;
 
   const container = document.getElementById('episodes-container');
   if (container) {
     const buttons = container.querySelectorAll('.episode-btn');
-    buttons.forEach((btn, idx) => {
-      btn.classList.toggle('active', idx + 1 === state.currentEpisode);
+    buttons.forEach(btn => {
+      const epNum = parseInt(btn.textContent.replace(/\D/g, ''), 10);
+      btn.classList.toggle('active', epNum === state.currentEpisode);
     });
   }
 
@@ -803,6 +828,10 @@ function toggleWatchlist() {
   updateWatchlistButton();
   updateWatchlistBadge();
   renderWatchlistRow();
+
+  if (state.gridCategory === 'watchlist' && DOM.gridModal?.classList.contains('active')) {
+    openGridModal('watchlist');
+  }
 }
 
 function updateWatchlistButton() {
@@ -825,6 +854,9 @@ function renderWatchlistRow() {
 function clearWatchlist() {
   localStorage.removeItem('myList');
   renderWatchlistRow();
+  if (state.gridCategory === 'watchlist' && DOM.gridModal?.classList.contains('active')) {
+    openGridModal('watchlist');
+  }
   showToast('Watchlist cleared');
 }
 
