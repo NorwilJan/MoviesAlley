@@ -886,14 +886,74 @@ function shareCurrentItem() {
 }
 
 /* =========================================================
-   SEARCH MODAL
+   SEARCH MODAL (WITH RECENT SEARCH HISTORY)
 ========================================================= */
+
+function getSearchHistory() {
+  return getStorage('recentSearches', []);
+}
+
+function saveSearchQuery(query) {
+  if (!query || query.length < 2) return;
+  let history = getSearchHistory();
+  history = history.filter(item => item.toLowerCase() !== query.toLowerCase());
+  history.unshift(query);
+  if (history.length > 5) history.pop();
+  setStorage('recentSearches', history);
+}
+
+function removeSearchHistoryItem(e, query) {
+  e.stopPropagation();
+  let history = getSearchHistory().filter(item => item !== query);
+  setStorage('recentSearches', history);
+  renderSearchHistory();
+}
+
+function clearAllSearchHistory() {
+  localStorage.removeItem('recentSearches');
+  renderSearchHistory();
+}
+
+function renderSearchHistory() {
+  const container = document.getElementById('search-history-container');
+  if (!container) return;
+
+  const history = getSearchHistory();
+  if (!history.length) {
+    container.innerHTML = '';
+    container.style.display = 'none';
+    return;
+  }
+
+  const tags = history.map(item => `
+    <span class="history-tag" onclick="useHistoryTag('${item.replace(/'/g, "\\'")}')">
+      <i class="fa-solid fa-clock-rotate-left"></i> ${item}
+      <button class="remove-tag-btn" onclick="removeSearchHistoryItem(event, '${item.replace(/'/g, "\\'")}')">&times;</button>
+    </span>
+  `).join('');
+
+  container.innerHTML = `
+    <div class="search-history-header">
+      <span>Recent Searches</span>
+      <button class="clear-history-btn" onclick="clearAllSearchHistory()">Clear All</button>
+    </div>
+    <div class="search-history-tags">${tags}</div>
+  `;
+  container.style.display = 'block';
+}
+
+function useHistoryTag(query) {
+  if (!DOM.searchInput) return;
+  DOM.searchInput.value = query;
+  searchTMDB();
+}
 
 function openSearchModal() {
   if (!DOM.searchModal) return;
   DOM.searchModal.classList.add('active');
   DOM.searchModal.setAttribute('aria-hidden', 'false');
   toggleBodyScroll(true);
+  renderSearchHistory();
   if (DOM.searchInput) setTimeout(() => DOM.searchInput.focus(), 100);
 }
 
@@ -914,7 +974,17 @@ function debounceSearch() {
 async function searchTMDB() {
   if (!DOM.searchInput || !DOM.searchResults) return;
   const query = DOM.searchInput.value.trim();
-  if (!query) { DOM.searchResults.innerHTML = ''; return; }
+  
+  if (!query) { 
+    DOM.searchResults.innerHTML = ''; 
+    renderSearchHistory();
+    return; 
+  }
+
+  const historyContainer = document.getElementById('search-history-container');
+  if (historyContainer) historyContainer.style.display = 'none';
+
+  saveSearchQuery(query);
 
   const data = await tmdbFetch('/search/multi', { query });
   const results = (data?.results || []).filter(item => item.poster_path && item.media_type !== 'person');
