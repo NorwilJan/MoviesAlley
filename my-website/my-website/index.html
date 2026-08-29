@@ -9,7 +9,6 @@
 </head>
 <body>
 
-    <!-- Header Navigation -->
     <header class="navbar">
         <div class="nav-left">
             <div class="logo">Stream<span>Vault</span></div>
@@ -27,27 +26,23 @@
         </div>
     </header>
 
-    <!-- Genre Filter Bar -->
     <section class="genre-bar-container">
         <div id="genre-bar" class="genre-bar">
             <button class="genre-chip active" data-genre="all">All Genres</button>
         </div>
     </section>
 
-    <!-- Main Content Area -->
     <main class="container">
         <section class="section">
             <h2 id="section-title" class="section-title">Trending Now</h2>
             <div id="media-grid" class="media-grid"></div>
             
-            <!-- Infinite Scroll Loader -->
             <div id="loading-spinner" class="spinner-container hidden">
                 <div class="spinner"></div>
             </div>
         </section>
     </main>
 
-    <!-- Search Modal -->
     <div id="search-modal" class="modal-backdrop hidden">
         <div class="modal-content search-modal-content">
             <div class="search-header">
@@ -56,7 +51,6 @@
                 <button id="close-search-btn" class="close-btn">&times;</button>
             </div>
 
-            <!-- Recent Search History -->
             <div id="recent-searches-container" class="recent-searches-container hidden">
                 <div class="recent-header">
                     <span>Recent Searches</span>
@@ -65,12 +59,10 @@
                 <div id="recent-tags-list" class="tags-list"></div>
             </div>
 
-            <!-- Search Results -->
             <div id="search-results-grid" class="media-grid"></div>
         </div>
     </div>
 
-    <!-- Video Player & Details Modal -->
     <div id="player-modal" class="modal-backdrop hidden">
         <div class="modal-content player-modal-content">
             <button id="close-player-btn" class="close-btn">&times;</button>
@@ -96,13 +88,11 @@
 
                 <p id="player-overview" class="overview-text">Overview description...</p>
 
-                <!-- Server Selection Controls -->
                 <div class="server-selection">
                     <span class="label"><i class="fas fa-server"></i> Switch Server:</span>
                     <div id="server-selector-container" class="server-buttons"></div>
                 </div>
 
-                <!-- TV Show Selector (Hidden for movies) -->
                 <div id="tv-controls" class="tv-controls hidden">
                     <div class="selector-group">
                         <label for="season-select">Season:</label>
