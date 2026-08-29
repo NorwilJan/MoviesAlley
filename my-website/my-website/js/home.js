@@ -58,7 +58,7 @@ const state = {
   currentEpisode: 1,
   maxEpisodesInSeason: 0,
   currentTabCategory: 'all',
-  currentServer: 'vidlink', // Default server switched to Vidlink
+  currentServer: 'vidlink', // Default server: Vidlink
   gridCategory: null,
   gridPage: 1,
   gridLoading: false,
@@ -413,7 +413,7 @@ function loadVideo() {
   let embedURL = '';
 
   if (state.currentServer === 'vidlink') {
-    // Server 1: Vidlink (Default - lowest ad count)
+    // Server 1: Vidlink (Lowest Ad Count)
     embedURL = isTv 
       ? `https://vidlink.pro/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}?primaryColor=e50914&autoplay=false`
       : `https://vidlink.pro/movie/${state.currentItem.id}?primaryColor=e50914&autoplay=false`;
@@ -423,7 +423,7 @@ function loadVideo() {
       ? `https://videasy.net/embed/tv?tmdb=${state.currentItem.id}&season=${state.currentSeason}&episode=${state.currentEpisode}`
       : `https://videasy.net/embed/movie?tmdb=${state.currentItem.id}`;
   } else {
-    // Server 3: Vidcore (Updated domain)
+    // Server 3: Vidcore (Fallback)
     embedURL = isTv 
       ? `https://vidcore.org/embed/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}`
       : `https://vidcore.org/embed/movie/${state.currentItem.id}`;
