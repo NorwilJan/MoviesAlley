@@ -413,14 +413,17 @@ function loadVideo() {
   let embedURL = '';
 
   if (state.currentServer === 'vidcore') {
+    // Server 1: Vidcore (Updated to domain: vidcore.org)
     embedURL = isTv 
-      ? `https://vidcore.pro/embed/tv?tmdb=${state.currentItem.id}&season=${state.currentSeason}&episode=${state.currentEpisode}`
-      : `https://vidcore.pro/embed/movie?tmdb=${state.currentItem.id}`;
+      ? `https://vidcore.org/embed/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}`
+      : `https://vidcore.org/embed/movie/${state.currentItem.id}`;
   } else if (state.currentServer === 'videasy') {
+    // Server 3: Videasy
     embedURL = isTv 
       ? `https://videasy.net/embed/tv?tmdb=${state.currentItem.id}&season=${state.currentSeason}&episode=${state.currentEpisode}`
       : `https://videasy.net/embed/movie?tmdb=${state.currentItem.id}`;
   } else {
+    // Server 2: Vidlink
     embedURL = isTv 
       ? `https://vidlink.pro/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}?primaryColor=e50914&autoplay=false`
       : `https://vidlink.pro/movie/${state.currentItem.id}?primaryColor=e50914&autoplay=false`;
