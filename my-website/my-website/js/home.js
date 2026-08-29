@@ -58,7 +58,7 @@ const state = {
   currentEpisode: 1,
   maxEpisodesInSeason: 0,
   currentTabCategory: 'all',
-  currentServer: 'vidlink',
+  currentServer: 'vidcore',
   gridCategory: null,
   gridPage: 1,
   gridLoading: false,
@@ -412,14 +412,14 @@ function loadVideo() {
   const isTv = state.currentItem.media_type === 'tv' || !state.currentItem.title;
   let embedURL = '';
 
-  if (state.currentServer === 'vidsrc') {
+  if (state.currentServer === 'vidcore') {
     embedURL = isTv 
-      ? `https://vidsrc.xyz/embed/tv?tmdb=${state.currentItem.id}&season=${state.currentSeason}&episode=${state.currentEpisode}`
-      : `https://vidsrc.xyz/embed/movie?tmdb=${state.currentItem.id}`;
-  } else if (state.currentServer === 'vidsrcpro') {
+      ? `https://vidcore.pro/embed/tv?tmdb=${state.currentItem.id}&season=${state.currentSeason}&episode=${state.currentEpisode}`
+      : `https://vidcore.pro/embed/movie?tmdb=${state.currentItem.id}`;
+  } else if (state.currentServer === 'videasy') {
     embedURL = isTv 
-      ? `https://vidsrc.pro/embed/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}`
-      : `https://vidsrc.pro/embed/movie/${state.currentItem.id}`;
+      ? `https://videasy.net/embed/tv?tmdb=${state.currentItem.id}&season=${state.currentSeason}&episode=${state.currentEpisode}`
+      : `https://videasy.net/embed/movie?tmdb=${state.currentItem.id}`;
   } else {
     embedURL = isTv 
       ? `https://vidlink.pro/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}?primaryColor=e50914&autoplay=false`
