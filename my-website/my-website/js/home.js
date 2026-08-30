@@ -1,5 +1,5 @@
 /* =========================================================
-   STREAMVAULT — JS ENGINE (OPTIMIZED & PROD READY)
+   STREAMVAULT — JS ENGINE (OPTIMIZED & BUG-FIXED)
 ========================================================= */
 
 const CONFIG = Object.freeze({
@@ -56,8 +56,9 @@ const state = {
   bannerItem: null,
   currentSeason: 1,
   currentEpisode: 1,
+  totalEpisodesInSeason: 0,
   currentTabCategory: 'all',
-  currentServer: 'vidlink', // Replaced videasy with vidlink
+  currentServer: 'vidlink',
   gridCategory: null,
   gridPage: 1,
   gridLoading: false,
@@ -76,48 +77,7 @@ let searchTimeout = null;
 let episodeFetchToken = 0;
 
 /* =========================================================
-   UI HELPERS: TOASTS & SKELETONS
-========================================================= */
-
-function showToast(message) {
-  let container = document.getElementById('toast-container');
-  if (!container) {
-    container = document.createElement('div');
-    container.id = 'toast-container';
-    document.body.appendChild(container);
-  }
-
-  const toast = document.createElement('div');
-  toast.className = 'toast';
-  toast.textContent = message;
-
-  container.appendChild(toast);
-
-  requestAnimationFrame(() => {
-    toast.classList.add('show');
-  });
-
-  setTimeout(() => {
-    toast.classList.remove('show');
-    toast.addEventListener('transitionend', () => toast.remove());
-  }, 3000);
-}
-
-function renderSkeletons(containerId, count = 8) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-  container.innerHTML = '';
-  const fragment = document.createDocumentFragment();
-  for (let i = 0; i < count; i++) {
-    const skeleton = document.createElement('div');
-    skeleton.className = 'skeleton-card';
-    fragment.appendChild(skeleton);
-  }
-  container.appendChild(fragment);
-}
-
-/* =========================================================
-   STORAGE & DOM REFERENCES
+   STORAGE MANAGEMENT (WITH QUOTA FAIL-SAFE)
 ========================================================= */
 
 function getStorage(key, fallback = []) {
@@ -133,9 +93,39 @@ function setStorage(key, val) {
   try {
     localStorage.setItem(key, JSON.stringify(val));
   } catch (e) {
-    console.error(`Storage error for ${key}:`, e);
+    if (e.name === 'QuotaExceededError') {
+      clearStaleCache();
+      try { localStorage.setItem(key, JSON.stringify(val)); } catch (retryErr) {}
+    }
   }
 }
+
+function getCachedApiData(key) {
+  try {
+    const raw = localStorage.getItem(`sv_cache_${key}`);
+    if (!raw) return null;
+    const { data, timestamp } = JSON.parse(raw);
+    if (Date.now() - timestamp < CONFIG.CACHE_TTL) return data;
+    localStorage.removeItem(`sv_cache_${key}`);
+  } catch (e) {
+    console.error('Cache read error:', e);
+  }
+  return null;
+}
+
+function setCachedApiData(key, data) {
+  setStorage(`sv_cache_${key}`, { data, timestamp: Date.now() });
+}
+
+function clearStaleCache() {
+  Object.keys(localStorage).forEach(k => {
+    if (k.startsWith('sv_cache_')) localStorage.removeItem(k);
+  });
+}
+
+/* =========================================================
+   UI HELPERS & DOM REFERENCES
+========================================================= */
 
 const DOM = {};
 
@@ -160,21 +150,39 @@ function initDOMReferences() {
   DOM.searchResults = document.getElementById('search-results');
 }
 
-function getCachedApiData(key) {
-  try {
-    const raw = localStorage.getItem(`sv_cache_${key}`);
-    if (!raw) return null;
-    const { data, timestamp } = JSON.parse(raw);
-    if (Date.now() - timestamp < CONFIG.CACHE_TTL) return data;
-    localStorage.removeItem(`sv_cache_${key}`);
-  } catch (e) {
-    console.error('Cache read error:', e);
+function showToast(message) {
+  let container = document.getElementById('toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    document.body.appendChild(container);
   }
-  return null;
+
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = message;
+
+  container.appendChild(toast);
+
+  requestAnimationFrame(() => toast.classList.add('show'));
+
+  setTimeout(() => {
+    toast.classList.remove('show');
+    toast.addEventListener('transitionend', () => toast.remove());
+  }, 3000);
 }
 
-function setCachedApiData(key, data) {
-  setStorage(`sv_cache_${key}`, { data, timestamp: Date.now() });
+function renderSkeletons(containerId, count = 8) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+  const fragment = document.createDocumentFragment();
+  for (let i = 0; i < count; i++) {
+    const skeleton = document.createElement('div');
+    skeleton.className = 'skeleton-card';
+    fragment.appendChild(skeleton);
+  }
+  container.appendChild(fragment);
 }
 
 function toggleBodyScroll(lock) {
@@ -211,7 +219,7 @@ async function fetchCategory(key, endpoint, params = {}) {
 }
 
 /* =========================================================
-   UI CARDS & DELEGATION
+   CARD BUILDER & DELEGATED SCROLL / CLICK
 ========================================================= */
 
 function createPosterCard(item, mediaType) {
@@ -416,7 +424,6 @@ function loadVideo() {
       ? `https://vidsrc.pro/embed/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}`
       : `https://vidsrc.pro/embed/movie/${state.currentItem.id}`;
   } else {
-    // VidLink Engine (Primary Server Replacement for Videasy)
     embedURL = isTv 
       ? `https://vidlink.pro/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}?primaryColor=e50914&autoplay=false`
       : `https://vidlink.pro/movie/${state.currentItem.id}?primaryColor=e50914&autoplay=false`;
@@ -514,6 +521,7 @@ async function loadEpisodes(tvId, seasonNumber) {
   if (token !== episodeFetchToken) return;
 
   if (data?.episodes?.length) {
+    state.totalEpisodesInSeason = data.episodes.length;
     const fragment = document.createDocumentFragment();
     data.episodes.forEach(ep => {
       const btn = document.createElement('button');
@@ -529,6 +537,8 @@ async function loadEpisodes(tvId, seasonNumber) {
       fragment.appendChild(btn);
     });
     container.appendChild(fragment);
+  } else {
+    state.totalEpisodesInSeason = 0;
   }
   loadVideo();
 }
@@ -568,18 +578,22 @@ function updateQuickControlsVisibility() {
 
 function skipIntro() {
   if (!DOM.modalVideo) return;
-  
   try {
     DOM.modalVideo.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'seekTo', args: [85, true] }), '*');
     DOM.modalVideo.contentWindow.postMessage({ type: 'seek', seconds: 85 }, '*');
+    showToast('Skipped intro (+85s)');
   } catch (e) {
-    console.log('PostMessage cross-origin restriction handled');
+    showToast('Player seeking non-responsive');
   }
-  showToast('Skipped intro (+85s)');
 }
 
 function playNextEpisode() {
   if (!state.currentItem) return;
+
+  if (state.currentEpisode >= state.totalEpisodesInSeason) {
+    showToast(`Reached end of Season ${state.currentSeason}`);
+    return;
+  }
 
   state.currentEpisode += 1;
 
@@ -942,7 +956,6 @@ async function init() {
     DOM.gridScrollArea.addEventListener('scroll', handleGridScroll);
   }
 
-  // Pre-fill rows with skeleton loaders while fetching API data
   renderSkeletons('movies-list');
   renderSkeletons('tvshows-list');
   renderSkeletons('anime-list');
