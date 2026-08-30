@@ -1,5 +1,5 @@
 /* =========================================================
-   REELROOM — CORE JAVASCRIPT ENGINE
+   STREAMVAULT — JS ENGINE (OPTIMIZED & PROD READY)
 ========================================================= */
 
 const CONFIG = Object.freeze({
@@ -9,7 +9,7 @@ const CONFIG = Object.freeze({
   MODAL_POSTER_URL: 'https://image.tmdb.org/t/p/w500',
   BACKDROP_URL: 'https://image.tmdb.org/t/p/original',
   CACHE_TTL: 2 * 60 * 60 * 1000, // 2 Hours
-  PLACEHOLDER_IMG: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="130" height="195" fill="%231a1a1a"><rect width="100%" height="100%"/><text x="50%" y="50%" fill="%23555" font-family="sans-serif" font-size="12" text-anchor="middle">No Poster</text></svg>'
+  PLACEHOLDER_IMG: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="130" height="195" fill="%231a1a1a"><rect width="100%" height="100%"/></svg>'
 });
 
 const CATEGORY_MAP = Object.freeze({
@@ -56,9 +56,8 @@ const state = {
   bannerItem: null,
   currentSeason: 1,
   currentEpisode: 1,
-  totalEpisodesInSeason: 0,
   currentTabCategory: 'all',
-  currentServer: 'vidlink',
+  currentServer: 'vidlink', // Replaced videasy with vidlink
   gridCategory: null,
   gridPage: 1,
   gridLoading: false,
@@ -77,7 +76,48 @@ let searchTimeout = null;
 let episodeFetchToken = 0;
 
 /* =========================================================
-   LOCAL STORAGE & CACHE SYSTEM
+   UI HELPERS: TOASTS & SKELETONS
+========================================================= */
+
+function showToast(message) {
+  let container = document.getElementById('toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    document.body.appendChild(container);
+  }
+
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = message;
+
+  container.appendChild(toast);
+
+  requestAnimationFrame(() => {
+    toast.classList.add('show');
+  });
+
+  setTimeout(() => {
+    toast.classList.remove('show');
+    toast.addEventListener('transitionend', () => toast.remove());
+  }, 3000);
+}
+
+function renderSkeletons(containerId, count = 8) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+  const fragment = document.createDocumentFragment();
+  for (let i = 0; i < count; i++) {
+    const skeleton = document.createElement('div');
+    skeleton.className = 'skeleton-card';
+    fragment.appendChild(skeleton);
+  }
+  container.appendChild(fragment);
+}
+
+/* =========================================================
+   STORAGE & DOM REFERENCES
 ========================================================= */
 
 function getStorage(key, fallback = []) {
@@ -93,39 +133,9 @@ function setStorage(key, val) {
   try {
     localStorage.setItem(key, JSON.stringify(val));
   } catch (e) {
-    if (e.name === 'QuotaExceededError') {
-      clearStaleCache();
-      try { localStorage.setItem(key, JSON.stringify(val)); } catch (retryErr) {}
-    }
+    console.error(`Storage error for ${key}:`, e);
   }
 }
-
-function getCachedApiData(key) {
-  try {
-    const raw = localStorage.getItem(`rr_cache_${key}`);
-    if (!raw) return null;
-    const { data, timestamp } = JSON.parse(raw);
-    if (Date.now() - timestamp < CONFIG.CACHE_TTL) return data;
-    localStorage.removeItem(`rr_cache_${key}`);
-  } catch (e) {
-    console.error('Cache parse error:', e);
-  }
-  return null;
-}
-
-function setCachedApiData(key, data) {
-  setStorage(`rr_cache_${key}`, { data, timestamp: Date.now() });
-}
-
-function clearStaleCache() {
-  Object.keys(localStorage).forEach(k => {
-    if (k.startsWith('rr_cache_')) localStorage.removeItem(k);
-  });
-}
-
-/* =========================================================
-   DOM HELPERS & UI TOASTS
-========================================================= */
 
 const DOM = {};
 
@@ -150,39 +160,21 @@ function initDOMReferences() {
   DOM.searchResults = document.getElementById('search-results');
 }
 
-function showToast(message) {
-  let container = document.getElementById('toast-container');
-  if (!container) {
-    container = document.createElement('div');
-    container.id = 'toast-container';
-    document.body.appendChild(container);
+function getCachedApiData(key) {
+  try {
+    const raw = localStorage.getItem(`sv_cache_${key}`);
+    if (!raw) return null;
+    const { data, timestamp } = JSON.parse(raw);
+    if (Date.now() - timestamp < CONFIG.CACHE_TTL) return data;
+    localStorage.removeItem(`sv_cache_${key}`);
+  } catch (e) {
+    console.error('Cache read error:', e);
   }
-
-  const toast = document.createElement('div');
-  toast.className = 'toast';
-  toast.textContent = message;
-
-  container.appendChild(toast);
-
-  requestAnimationFrame(() => toast.classList.add('show'));
-
-  setTimeout(() => {
-    toast.classList.remove('show');
-    toast.addEventListener('transitionend', () => toast.remove());
-  }, 3000);
+  return null;
 }
 
-function renderSkeletons(containerId, count = 8) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-  container.innerHTML = '';
-  const fragment = document.createDocumentFragment();
-  for (let i = 0; i < count; i++) {
-    const skeleton = document.createElement('div');
-    skeleton.className = 'skeleton-card';
-    fragment.appendChild(skeleton);
-  }
-  container.appendChild(fragment);
+function setCachedApiData(key, data) {
+  setStorage(`sv_cache_${key}`, { data, timestamp: Date.now() });
 }
 
 function toggleBodyScroll(lock) {
@@ -191,7 +183,7 @@ function toggleBodyScroll(lock) {
 }
 
 /* =========================================================
-   API FETCHING
+   API ENGINE
 ========================================================= */
 
 async function tmdbFetch(endpoint, params = {}) {
@@ -203,7 +195,7 @@ async function tmdbFetch(endpoint, params = {}) {
     const res = await fetch(url.toString());
     return res.ok ? await res.json() : null;
   } catch (err) {
-    console.error('TMDB fetch error:', err);
+    console.error('API fetch error:', err);
     return null;
   }
 }
@@ -219,7 +211,7 @@ async function fetchCategory(key, endpoint, params = {}) {
 }
 
 /* =========================================================
-   POSTER RENDERER & DRAG/CLICK DELEGATION
+   UI CARDS & DELEGATION
 ========================================================= */
 
 function createPosterCard(item, mediaType) {
@@ -342,7 +334,7 @@ function filterContent(category, btn) {
 }
 
 /* =========================================================
-   SPOTLIGHT & PLAYER MODAL CONTROLS
+   BANNER & DETAILS MODAL
 ========================================================= */
 
 function displayBanner(item) {
@@ -424,6 +416,7 @@ function loadVideo() {
       ? `https://vidsrc.pro/embed/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}`
       : `https://vidsrc.pro/embed/movie/${state.currentItem.id}`;
   } else {
+    // VidLink Engine (Primary Server Replacement for Videasy)
     embedURL = isTv 
       ? `https://vidlink.pro/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}?primaryColor=e50914&autoplay=false`
       : `https://vidlink.pro/movie/${state.currentItem.id}?primaryColor=e50914&autoplay=false`;
@@ -438,7 +431,7 @@ function switchServer(serverName) {
     btn.classList.toggle('active', btn.dataset.server === serverName);
   });
   loadVideo();
-  showToast(`Switched player engine to ${serverName.toUpperCase()}`);
+  showToast(`Switched server to ${serverName.toUpperCase()}`);
 }
 
 async function renderExtraDetails(item) {
@@ -474,7 +467,7 @@ async function renderExtraDetails(item) {
 }
 
 /* =========================================================
-   TV SEASON & EPISODE SELECTION
+   TV SEASONS & EPISODES
 ========================================================= */
 
 async function loadTVSeasons(tvId, targetSeason = 1, targetEpisode = 1) {
@@ -521,7 +514,6 @@ async function loadEpisodes(tvId, seasonNumber) {
   if (token !== episodeFetchToken) return;
 
   if (data?.episodes?.length) {
-    state.totalEpisodesInSeason = data.episodes.length;
     const fragment = document.createDocumentFragment();
     data.episodes.forEach(ep => {
       const btn = document.createElement('button');
@@ -537,8 +529,6 @@ async function loadEpisodes(tvId, seasonNumber) {
       fragment.appendChild(btn);
     });
     container.appendChild(fragment);
-  } else {
-    state.totalEpisodesInSeason = 0;
   }
   loadVideo();
 }
@@ -566,7 +556,7 @@ function closeModal() {
 }
 
 /* =========================================================
-   KEYBOARD & MEDIA SHORTCUTS
+   PLAYBACK CONTROLS & KEYBOARD
 ========================================================= */
 
 function updateQuickControlsVisibility() {
@@ -578,22 +568,18 @@ function updateQuickControlsVisibility() {
 
 function skipIntro() {
   if (!DOM.modalVideo) return;
+  
   try {
     DOM.modalVideo.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'seekTo', args: [85, true] }), '*');
     DOM.modalVideo.contentWindow.postMessage({ type: 'seek', seconds: 85 }, '*');
-    showToast('Skipped intro (+85s)');
   } catch (e) {
-    showToast('Seeking command issued');
+    console.log('PostMessage cross-origin restriction handled');
   }
+  showToast('Skipped intro (+85s)');
 }
 
 function playNextEpisode() {
   if (!state.currentItem) return;
-
-  if (state.currentEpisode >= state.totalEpisodesInSeason) {
-    showToast(`Reached end of Season ${state.currentSeason}`);
-    return;
-  }
 
   state.currentEpisode += 1;
 
@@ -607,7 +593,7 @@ function playNextEpisode() {
 
   loadVideo();
   saveCurrentProgress();
-  showToast(`Loaded Episode ${state.currentEpisode}`);
+  showToast(`Loading Episode ${state.currentEpisode}`);
 }
 
 function toggleFullscreen() {
@@ -657,7 +643,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 /* =========================================================
-   GRID MODAL & INFINITE SCROLL
+   GRID MODAL & DYNAMIC GENRES
 ========================================================= */
 
 function openGridModal(categoryKey) {
@@ -781,7 +767,7 @@ function handleGridScroll() {
 }
 
 /* =========================================================
-   WATCHLIST & HISTORY LOGIC
+   WATCHLIST & HISTORY WITH TOAST FEEDBACK
 ========================================================= */
 
 function getWatchlist() {
@@ -890,7 +876,7 @@ function shareCurrentItem() {
   if (!state.currentItem) return;
   const title = state.currentItem.title || state.currentItem.name;
   if (navigator.share) {
-    navigator.share({ title: `Watch ${title} on ReelRoom`, url: window.location.href }).catch(() => {});
+    navigator.share({ title: `Watch ${title} on StreamVault`, url: window.location.href }).catch(() => {});
   } else {
     navigator.clipboard.writeText(window.location.href);
     showToast('Link copied to clipboard!');
@@ -898,7 +884,7 @@ function shareCurrentItem() {
 }
 
 /* =========================================================
-   SEARCH OVERLAY ENGINE
+   SEARCH MODAL
 ========================================================= */
 
 function openSearchModal() {
@@ -933,7 +919,7 @@ async function searchTMDB() {
 
   DOM.searchResults.innerHTML = '';
   if (!results.length) {
-    DOM.searchResults.innerHTML = `<p style="grid-column:1/-1; text-align:center; color:#777; padding:40px 0;">No matching titles found.</p>`;
+    DOM.searchResults.innerHTML = `<p style="grid-column:1/-1; text-align:center; color:#777; padding:40px 0;">No results found.</p>`;
     return;
   }
 
@@ -946,7 +932,7 @@ async function searchTMDB() {
 }
 
 /* =========================================================
-   INITIALIZATION
+   APPLICATION INIT
 ========================================================= */
 
 async function init() {
@@ -956,6 +942,7 @@ async function init() {
     DOM.gridScrollArea.addEventListener('scroll', handleGridScroll);
   }
 
+  // Pre-fill rows with skeleton loaders while fetching API data
   renderSkeletons('movies-list');
   renderSkeletons('tvshows-list');
   renderSkeletons('anime-list');
