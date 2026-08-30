@@ -1,5 +1,5 @@
 /* =========================================================
-   STREAMVAULT — JS ENGINE (OPTIMIZED & BUG-FIXED)
+   REELROOM — CORE JAVASCRIPT ENGINE
 ========================================================= */
 
 const CONFIG = Object.freeze({
@@ -9,7 +9,7 @@ const CONFIG = Object.freeze({
   MODAL_POSTER_URL: 'https://image.tmdb.org/t/p/w500',
   BACKDROP_URL: 'https://image.tmdb.org/t/p/original',
   CACHE_TTL: 2 * 60 * 60 * 1000, // 2 Hours
-  PLACEHOLDER_IMG: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="130" height="195" fill="%231a1a1a"><rect width="100%" height="100%"/></svg>'
+  PLACEHOLDER_IMG: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="130" height="195" fill="%231a1a1a"><rect width="100%" height="100%"/><text x="50%" y="50%" fill="%23555" font-family="sans-serif" font-size="12" text-anchor="middle">No Poster</text></svg>'
 });
 
 const CATEGORY_MAP = Object.freeze({
@@ -77,7 +77,7 @@ let searchTimeout = null;
 let episodeFetchToken = 0;
 
 /* =========================================================
-   STORAGE MANAGEMENT (WITH QUOTA FAIL-SAFE)
+   LOCAL STORAGE & CACHE SYSTEM
 ========================================================= */
 
 function getStorage(key, fallback = []) {
@@ -102,29 +102,29 @@ function setStorage(key, val) {
 
 function getCachedApiData(key) {
   try {
-    const raw = localStorage.getItem(`sv_cache_${key}`);
+    const raw = localStorage.getItem(`rr_cache_${key}`);
     if (!raw) return null;
     const { data, timestamp } = JSON.parse(raw);
     if (Date.now() - timestamp < CONFIG.CACHE_TTL) return data;
-    localStorage.removeItem(`sv_cache_${key}`);
+    localStorage.removeItem(`rr_cache_${key}`);
   } catch (e) {
-    console.error('Cache read error:', e);
+    console.error('Cache parse error:', e);
   }
   return null;
 }
 
 function setCachedApiData(key, data) {
-  setStorage(`sv_cache_${key}`, { data, timestamp: Date.now() });
+  setStorage(`rr_cache_${key}`, { data, timestamp: Date.now() });
 }
 
 function clearStaleCache() {
   Object.keys(localStorage).forEach(k => {
-    if (k.startsWith('sv_cache_')) localStorage.removeItem(k);
+    if (k.startsWith('rr_cache_')) localStorage.removeItem(k);
   });
 }
 
 /* =========================================================
-   UI HELPERS & DOM REFERENCES
+   DOM HELPERS & UI TOASTS
 ========================================================= */
 
 const DOM = {};
@@ -191,7 +191,7 @@ function toggleBodyScroll(lock) {
 }
 
 /* =========================================================
-   API ENGINE
+   API FETCHING
 ========================================================= */
 
 async function tmdbFetch(endpoint, params = {}) {
@@ -203,7 +203,7 @@ async function tmdbFetch(endpoint, params = {}) {
     const res = await fetch(url.toString());
     return res.ok ? await res.json() : null;
   } catch (err) {
-    console.error('API fetch error:', err);
+    console.error('TMDB fetch error:', err);
     return null;
   }
 }
@@ -219,7 +219,7 @@ async function fetchCategory(key, endpoint, params = {}) {
 }
 
 /* =========================================================
-   CARD BUILDER & DELEGATED SCROLL / CLICK
+   POSTER RENDERER & DRAG/CLICK DELEGATION
 ========================================================= */
 
 function createPosterCard(item, mediaType) {
@@ -342,7 +342,7 @@ function filterContent(category, btn) {
 }
 
 /* =========================================================
-   BANNER & DETAILS MODAL
+   SPOTLIGHT & PLAYER MODAL CONTROLS
 ========================================================= */
 
 function displayBanner(item) {
@@ -438,7 +438,7 @@ function switchServer(serverName) {
     btn.classList.toggle('active', btn.dataset.server === serverName);
   });
   loadVideo();
-  showToast(`Switched server to ${serverName.toUpperCase()}`);
+  showToast(`Switched player engine to ${serverName.toUpperCase()}`);
 }
 
 async function renderExtraDetails(item) {
@@ -474,7 +474,7 @@ async function renderExtraDetails(item) {
 }
 
 /* =========================================================
-   TV SEASONS & EPISODES
+   TV SEASON & EPISODE SELECTION
 ========================================================= */
 
 async function loadTVSeasons(tvId, targetSeason = 1, targetEpisode = 1) {
@@ -566,7 +566,7 @@ function closeModal() {
 }
 
 /* =========================================================
-   PLAYBACK CONTROLS & KEYBOARD
+   KEYBOARD & MEDIA SHORTCUTS
 ========================================================= */
 
 function updateQuickControlsVisibility() {
@@ -583,7 +583,7 @@ function skipIntro() {
     DOM.modalVideo.contentWindow.postMessage({ type: 'seek', seconds: 85 }, '*');
     showToast('Skipped intro (+85s)');
   } catch (e) {
-    showToast('Player seeking non-responsive');
+    showToast('Seeking command issued');
   }
 }
 
@@ -607,7 +607,7 @@ function playNextEpisode() {
 
   loadVideo();
   saveCurrentProgress();
-  showToast(`Loading Episode ${state.currentEpisode}`);
+  showToast(`Loaded Episode ${state.currentEpisode}`);
 }
 
 function toggleFullscreen() {
@@ -657,7 +657,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 /* =========================================================
-   GRID MODAL & DYNAMIC GENRES
+   GRID MODAL & INFINITE SCROLL
 ========================================================= */
 
 function openGridModal(categoryKey) {
@@ -781,7 +781,7 @@ function handleGridScroll() {
 }
 
 /* =========================================================
-   WATCHLIST & HISTORY WITH TOAST FEEDBACK
+   WATCHLIST & HISTORY LOGIC
 ========================================================= */
 
 function getWatchlist() {
@@ -890,7 +890,7 @@ function shareCurrentItem() {
   if (!state.currentItem) return;
   const title = state.currentItem.title || state.currentItem.name;
   if (navigator.share) {
-    navigator.share({ title: `Watch ${title} on StreamVault`, url: window.location.href }).catch(() => {});
+    navigator.share({ title: `Watch ${title} on ReelRoom`, url: window.location.href }).catch(() => {});
   } else {
     navigator.clipboard.writeText(window.location.href);
     showToast('Link copied to clipboard!');
@@ -898,7 +898,7 @@ function shareCurrentItem() {
 }
 
 /* =========================================================
-   SEARCH MODAL
+   SEARCH OVERLAY ENGINE
 ========================================================= */
 
 function openSearchModal() {
@@ -933,7 +933,7 @@ async function searchTMDB() {
 
   DOM.searchResults.innerHTML = '';
   if (!results.length) {
-    DOM.searchResults.innerHTML = `<p style="grid-column:1/-1; text-align:center; color:#777; padding:40px 0;">No results found.</p>`;
+    DOM.searchResults.innerHTML = `<p style="grid-column:1/-1; text-align:center; color:#777; padding:40px 0;">No matching titles found.</p>`;
     return;
   }
 
@@ -946,7 +946,7 @@ async function searchTMDB() {
 }
 
 /* =========================================================
-   APPLICATION INIT
+   INITIALIZATION
 ========================================================= */
 
 async function init() {
