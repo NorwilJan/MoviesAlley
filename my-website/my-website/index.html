@@ -1,239 +1,195 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>StreamVault — Watch Movies & TV Shows</title>
-  <link rel="stylesheet" href="css/home.css" />
-  <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <script defer src="js/home.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReelRoom Player</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #0d0d0d;
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 16px;
+    }
+
+    .player-container {
+      position: relative;
+      width: 100%;
+      max-width: 1100px;
+      aspect-ratio: 16 / 9;
+      background-color: #000000;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .player-controls {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      z-index: 20;
+      display: flex;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 6px 12px;
+      border-radius: 8px;
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .server-select {
+      background-color: #1a1a1a;
+      color: #ffffff;
+      border: 1px solid #333333;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 13px;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .server-select:hover {
+      border-color: #e50914;
+    }
+
+    .loading-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background-color: #050505;
+      color: #a0a0a0;
+      font-size: 14px;
+      z-index: 10;
+      transition: opacity 0.3s ease;
+    }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      border-top-color: #e50914;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 12px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+  </style>
 </head>
 <body>
 
-  <!-- NAVBAR -->
-  <header class="navbar">
-    <a href="#" aria-label="StreamVault Home">
-      <img src="logo.png" alt="StreamVault Logo" />
-    </a>
-
-    <nav class="nav-links">
-      <a href="#" class="active" onclick="filterContent('all', this)">Home</a>
-      <a href="#" onclick="filterContent('movie', this)">Movies</a>
-      <a href="#" onclick="filterContent('tv', this)">TV Shows</a>
-      <a href="#" onclick="filterContent('anime', this)">Anime</a>
-      <a href="#" class="nav-badge-link" onclick="openGridModal('watchlist')">
-        My List <span id="watchlist-badge" class="nav-badge" style="display: none;">0</span>
-      </a>
-    </nav>
-
-    <div style="display: flex; align-items: center; gap: 12px;">
-      <button class="surprise-nav-btn" onclick="surpriseMe()" aria-label="Surprise Me">
-        <i class="fa-solid fa-dice"></i>
-        <span>Surprise</span>
-      </button>
-
-      <input 
-        type="text" 
-        class="search-bar" 
-        placeholder="Search... (Press /)" 
-        onclick="openSearchModal()" 
-        readonly 
-        aria-label="Search media"
-      />
+  <div class="player-container">
+    <!-- Server Switcher Controls -->
+    <div class="player-controls">
+      <select id="serverSelect" class="server-select">
+        <option value="vidcore">Server: Vidcore (Primary)</option>
+        <option value="vidlink">Server: VidLink (Fallback)</option>
+        <option value="videasy">Server: Videasy (Backup)</option>
+      </select>
     </div>
-  </header>
 
-  <!-- MAIN BANNER -->
-  <section id="banner" class="banner">
-    <div class="banner-content">
-      <h1 id="banner-title">Loading Featured...</h1>
-      <div class="banner-btn-group">
-        <button class="banner-btn" onclick="playBanner()">
-          <i class="fa-solid fa-play"></i> Watch Now
-        </button>
-      </div>
+    <!-- Loading Indicator -->
+    <div id="loadingOverlay" class="loading-overlay">
+      <div class="spinner"></div>
+      <span>Loading player stream...</span>
     </div>
-  </section>
 
-  <!-- MAIN CONTENT CONTAINER -->
-  <main>
-    <!-- CONTINUE WATCHING ROW -->
-    <section id="continue-row" class="row" style="display: none;">
-      <div class="row-header">
-        <h2>Continue Watching</h2>
-        <button class="clear-btn" onclick="clearContinueWatching()">Clear All</button>
-      </div>
-      <div class="list-wrapper">
-        <div id="continue-list" class="list"></div>
-      </div>
-    </section>
-
-    <!-- WATCHLIST ROW -->
-    <section id="watchlist-row" class="row" style="display: none;">
-      <div class="row-header">
-        <h2>My List</h2>
-        <button class="clear-btn" onclick="clearWatchlist()">Clear All</button>
-      </div>
-      <div class="list-wrapper">
-        <div id="watchlist-list" class="list"></div>
-      </div>
-    </section>
-
-    <!-- TRENDING MOVIES -->
-    <section id="movies-row" class="row">
-      <div class="row-header">
-        <h2>Trending Movies</h2>
-        <button class="see-all-btn" onclick="openGridModal('movies')">See All</button>
-      </div>
-      <div class="list-wrapper">
-        <button class="scroll-arrow left" onclick="scrollList('movies-list', -1)" aria-label="Scroll left"><i class="fa-solid fa-chevron-left"></i></button>
-        <div id="movies-list" class="list"></div>
-        <button class="scroll-arrow right" onclick="scrollList('movies-list', 1)" aria-label="Scroll right"><i class="fa-solid fa-chevron-right"></i></button>
-      </div>
-    </section>
-
-    <!-- TRENDING TV SHOWS -->
-    <section id="tvshows-row" class="row">
-      <div class="row-header">
-        <h2>Trending TV Shows</h2>
-        <button class="see-all-btn" onclick="openGridModal('tv')">See All</button>
-      </div>
-      <div class="list-wrapper">
-        <button class="scroll-arrow left" onclick="scrollList('tvshows-list', -1)" aria-label="Scroll left"><i class="fa-solid fa-chevron-left"></i></button>
-        <div id="tvshows-list" class="list"></div>
-        <button class="scroll-arrow right" onclick="scrollList('tvshows-list', 1)" aria-label="Scroll right"><i class="fa-solid fa-chevron-right"></i></button>
-      </div>
-    </section>
-
-    <!-- ANIME ROW -->
-    <section id="anime-row" class="row">
-      <div class="row-header">
-        <h2>Popular Anime</h2>
-        <button class="see-all-btn" onclick="openGridModal('anime')">See All</button>
-      </div>
-      <div class="list-wrapper">
-        <button class="scroll-arrow left" onclick="scrollList('anime-list', -1)" aria-label="Scroll left"><i class="fa-solid fa-chevron-left"></i></button>
-        <div id="anime-list" class="list"></div>
-        <button class="scroll-arrow right" onclick="scrollList('anime-list', 1)" aria-label="Scroll right"><i class="fa-solid fa-chevron-right"></i></button>
-      </div>
-    </section>
-
-    <!-- TAGALOG MOVIES -->
-    <section id="tagalog-row" class="row">
-      <div class="row-header">
-        <h2>Filipino Cinema</h2>
-        <button class="see-all-btn" onclick="openGridModal('tagalog')">See All</button>
-      </div>
-      <div class="list-wrapper">
-        <button class="scroll-arrow left" onclick="scrollList('tagalog-list', -1)" aria-label="Scroll left"><i class="fa-solid fa-chevron-left"></i></button>
-        <div id="tagalog-list" class="list"></div>
-        <button class="scroll-arrow right" onclick="scrollList('tagalog-list', 1)" aria-label="Scroll right"><i class="fa-solid fa-chevron-right"></i></button>
-      </div>
-    </section>
-
-    <!-- K-DRAMA ROW -->
-    <section id="kdrama-row" class="row">
-      <div class="row-header">
-        <h2>Korean Dramas</h2>
-        <button class="see-all-btn" onclick="openGridModal('kdrama')">See All</button>
-      </div>
-      <div class="list-wrapper">
-        <button class="scroll-arrow left" onclick="scrollList('kdrama-list', -1)" aria-label="Scroll left"><i class="fa-solid fa-chevron-left"></i></button>
-        <div id="kdrama-list" class="list"></div>
-        <button class="scroll-arrow right" onclick="scrollList('kdrama-list', 1)" aria-label="Scroll right"><i class="fa-solid fa-chevron-right"></i></button>
-      </div>
-    </section>
-  </main>
-
-  <!-- DETAILS MODAL -->
-  <div id="modal" class="modal" role="dialog" aria-hidden="true">
-    <div class="modal-content">
-      <button class="close" onclick="closeModal()" aria-label="Close modal">&times;</button>
-      <div class="modal-body">
-        <img id="modal-image" src="" alt="Poster" />
-        <div class="modal-text">
-          <h2 id="modal-title"></h2>
-          <div id="modal-rating" class="stars"></div>
-          <p id="modal-description"></p>
-          
-          <div class="modal-actions-inline">
-            <button id="watchlist-btn" class="watchlist-btn" onclick="toggleWatchlist()">Add to List</button>
-            <button class="share-btn" onclick="shareCurrentItem()"><i class="fa-solid fa-share"></i> Share</button>
-          </div>
-
-          <div id="series-options" class="series-options" style="display: none;">
-            <div class="select-wrapper">
-              <label for="season-select">Season:</label>
-              <select id="season-select" onchange="onSeasonChange()"></select>
-            </div>
-            <div id="episodes-container" class="episodes-container"></div>
-          </div>
-
-          <div class="server-switcher">
-            <span>Server:</span>
-            <button class="server-btn active" data-server="vidlink" onclick="switchServer('vidlink')">Server 1 (VidLink)</button>
-            <button class="server-btn" data-server="vidcore" onclick="switchServer('vidcore')">Server 2 (VidCore)</button>
-            <button class="server-btn" data-server="videasy" onclick="switchServer('videasy')">Server 3 (VidEasy)</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- PLAYER CONTAINER & INLINE CONTROLS -->
-      <div class="player-wrapper">
-        <div id="player-container" class="video-container">
-          <iframe id="modal-video" src="about:blank" allowfullscreen title="Video Player"></iframe>
-        </div>
-
-        <div id="player-quick-controls" class="player-quick-controls" style="display: none;">
-          <button class="quick-btn" onclick="skipIntro()">
-            <i class="fa-solid fa-forward-step"></i> Skip Intro (+85s)
-          </button>
-          <button class="quick-btn primary" onclick="playNextEpisode()">
-            <span>Next Episode</span> <i class="fa-solid fa-chevron-right"></i>
-          </button>
-        </div>
-      </div>
-
-      <!-- TRAILER AND CAST CONTAINER -->
-      <div id="modal-trailer-container"></div>
-      <div id="modal-cast-container"></div>
-    </div>
+    <!-- Media Stream Frame -->
+    <iframe 
+      id="streamFrame"
+      allowfullscreen 
+      allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+      referrerpolicy="origin">
+    </iframe>
   </div>
 
-  <!-- SEE ALL GRID MODAL -->
-  <div id="grid-modal" class="grid-modal" role="dialog" aria-hidden="true">
-    <button class="close" onclick="closeGridModal()" aria-label="Close Modal">&times;</button>
-    <div class="grid-header">
-      <h2 id="grid-modal-title">Category Details</h2>
-      <div id="genre-tabs" class="genre-tabs"></div>
-    </div>
-    <div id="grid-scroll-area" class="grid-scroll-area">
-      <div id="grid-modal-results" class="grid-container"></div>
-    </div>
-  </div>
+  <script>
+    // Configuration Settings
+    const CONFIG = {
+      tmdbId: '533535',       // Replace with dynamic TMDB ID or URL search param
+      type: 'movie',          // 'movie' or 'tv'
+      season: 1,              // For TV shows
+      episode: 1,             // For TV shows
+      themeColor: 'e50914'    // Hex without '#'
+    };
 
-  <!-- SEARCH MODAL -->
-  <div id="search-modal" class="search-modal" role="dialog" aria-hidden="true">
-    <button class="close" onclick="closeSearchModal()" aria-label="Close Search">&times;</button>
-    <div class="search-input-wrapper">
-      <input 
-        type="text" 
-        id="search-input" 
-        placeholder="Type movie or show name..." 
-        oninput="debounceSearch()" 
-        aria-label="Search Input"
-      />
-    </div>
-    <div id="search-results" class="results"></div>
-  </div>
+    // Provider Route Engine
+    const PROVIDERS = {
+      vidcore: (config) => 
+        config.type === 'tv'
+          ? `https://vidcore.org/embed/tv/${config.tmdbId}/${config.season}/${config.episode}?theme=${config.themeColor}&autoplay=true`
+          : `https://vidcore.org/embed/movie/${config.tmdbId}?theme=${config.themeColor}&autoplay=true`,
+      
+      vidlink: (config) => 
+        config.type === 'tv'
+          ? `https://vidlink.pro/tv/${config.tmdbId}/${config.season}/${config.episode}`
+          : `https://vidlink.pro/movie/${config.tmdbId}`,
 
-  <!-- FOOTER -->
-  <footer class="footer">
-    <div class="footer-content">
-      <p>&copy; 2026 StreamVault. All rights reserved.</p>
-    </div>
-  </footer>
+      videasy: (config) => 
+        config.type === 'tv'
+          ? `https://player.videasy.net/tv/${config.tmdbId}/${config.season}/${config.episode}`
+          : `https://player.videasy.net/movie/${config.tmdbId}`
+    };
+
+    const streamFrame = document.getElementById('streamFrame');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const serverSelect = document.getElementById('serverSelect');
+
+    function loadStream(providerKey) {
+      loadingOverlay.style.display = 'flex';
+      loadingOverlay.style.opacity = '1';
+      
+      const targetUrl = PROVIDERS[providerKey](CONFIG);
+      streamFrame.src = targetUrl;
+    }
+
+    streamFrame.addEventListener('load', () => {
+      loadingOverlay.style.opacity = '0';
+      setTimeout(() => {
+        loadingOverlay.style.display = 'none';
+      }, 300);
+    });
+
+    serverSelect.addEventListener('change', (e) => {
+      loadStream(e.target.value);
+    });
+
+    // Listen to postMessage events from Vidcore
+    window.addEventListener('message', (event) => {
+      if (!event.origin.includes('vidcore.org')) return;
+      
+      if (event.data?.type === 'vidcore:play') {
+        console.log('Playback started on Vidcore');
+      }
+    });
+
+    // Initial Load
+    loadStream('vidcore');
+  </script>
 
 </body>
 </html>
