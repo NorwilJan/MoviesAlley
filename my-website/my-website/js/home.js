@@ -1,5 +1,5 @@
 /* =========================================================
-   STREAMVAULT — JS ENGINE (OPTIMIZED & BUG-FIXED)
+   STREAMVAULT — JS ENGINE (UPDATED WITH VIDCORE & VIDEASY)
 ========================================================= */
 
 const CONFIG = Object.freeze({
@@ -415,14 +415,14 @@ function loadVideo() {
   const isTv = state.currentItem.media_type === 'tv' || !state.currentItem.title;
   let embedURL = '';
 
-  if (state.currentServer === 'vidsrc') {
+  if (state.currentServer === 'vidcore') {
     embedURL = isTv 
-      ? `https://vidsrc.xyz/embed/tv?tmdb=${state.currentItem.id}&season=${state.currentSeason}&episode=${state.currentEpisode}`
-      : `https://vidsrc.xyz/embed/movie?tmdb=${state.currentItem.id}`;
-  } else if (state.currentServer === 'vidsrcpro') {
+      ? `https://vidcore.net/embed/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}`
+      : `https://vidcore.net/embed/movie/${state.currentItem.id}`;
+  } else if (state.currentServer === 'videasy') {
     embedURL = isTv 
-      ? `https://vidsrc.pro/embed/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}`
-      : `https://vidsrc.pro/embed/movie/${state.currentItem.id}`;
+      ? `https://player.videasy.net/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}`
+      : `https://player.videasy.net/movie/${state.currentItem.id}`;
   } else {
     embedURL = isTv 
       ? `https://vidlink.pro/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}?primaryColor=e50914&autoplay=false`
