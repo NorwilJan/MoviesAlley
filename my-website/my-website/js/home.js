@@ -1,5 +1,5 @@
 /* =========================================================
-   STREAMVAULT — JS ENGINE (OPTIMIZED & BUG-FIXED)
+   STREAMVAULT — JS ENGINE (UPDATED & STABILIZED)
 ========================================================= */
 
 const CONFIG = Object.freeze({
@@ -73,9 +73,6 @@ const caches = {
   fullData: { movies: [], tv: [], anime: [], tagalog: [], kdrama: [] }
 };
 
-// In-memory lookup registry to prevent memory leaks in DOM dataset stringification
-const itemRegistry = new Map();
-
 let searchTimeout = null;
 let episodeFetchToken = 0;
 
@@ -86,7 +83,9 @@ let episodeFetchToken = 0;
 function getStorage(key, fallback = []) {
   try {
     const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : fallback;
   } catch (e) {
     return fallback;
   }
@@ -151,9 +150,19 @@ function initDOMReferences() {
   DOM.searchModal = document.getElementById('search-modal');
   DOM.searchInput = document.getElementById('search-input');
   DOM.searchResults = document.getElementById('search-results');
-  DOM.playerQuickControls = document.getElementById('player-quick-controls');
-  DOM.seasonSelect = document.getElementById('season-select');
-  DOM.episodesContainer = document.getElementById('episodes-container');
+
+  // Setup Backdrop Close Handlers
+  [DOM.modal, DOM.gridModal, DOM.searchModal].forEach(modalEl => {
+    if (modalEl) {
+      modalEl.addEventListener('click', (e) => {
+        if (e.target === modalEl) {
+          if (modalEl === DOM.modal) closeModal();
+          if (modalEl === DOM.gridModal) closeGridModal();
+          if (modalEl === DOM.searchModal) closeSearchModal();
+        }
+      });
+    }
+  });
 }
 
 function showToast(message) {
@@ -169,6 +178,7 @@ function showToast(message) {
   toast.textContent = message;
 
   container.appendChild(toast);
+
   requestAnimationFrame(() => toast.classList.add('show'));
 
   setTimeout(() => {
@@ -228,7 +238,21 @@ async function fetchCategory(key, endpoint, params = {}) {
 ========================================================= */
 
 function createPosterCard(item, mediaType) {
-  const normalizedItem = {
+  const img = document.createElement('img');
+  img.className = 'poster-card';
+  img.src = item.poster_path ? `${CONFIG.POSTER_URL}${item.poster_path}` : CONFIG.PLACEHOLDER_IMG;
+  img.alt = item.title || item.name || 'Poster';
+  img.loading = 'lazy';
+  img.decoding = 'async';
+  img.setAttribute('role', 'button');
+  img.setAttribute('tabindex', '0');
+
+  img.onerror = () => { 
+    img.onerror = null;
+    img.src = CONFIG.PLACEHOLDER_IMG; 
+  };
+
+  img.dataset.item = JSON.stringify({
     id: item.id,
     title: item.title || item.name,
     overview: item.overview,
@@ -236,22 +260,7 @@ function createPosterCard(item, mediaType) {
     backdrop_path: item.backdrop_path,
     vote_average: item.vote_average,
     media_type: item.media_type || mediaType
-  };
-
-  const registryKey = `${normalizedItem.media_type}_${normalizedItem.id}`;
-  itemRegistry.set(registryKey, normalizedItem);
-
-  const img = document.createElement('img');
-  img.className = 'poster-card';
-  img.src = item.poster_path ? `${CONFIG.POSTER_URL}${item.poster_path}` : CONFIG.PLACEHOLDER_IMG;
-  img.alt = normalizedItem.title || 'Poster';
-  img.loading = 'lazy';
-  img.decoding = 'async';
-  img.setAttribute('role', 'button');
-  img.setAttribute('tabindex', '0');
-
-  img.onerror = () => { img.src = CONFIG.PLACEHOLDER_IMG; };
-  img.dataset.registryKey = registryKey;
+  });
 
   return img;
 }
@@ -269,17 +278,6 @@ function displayList(items, containerId, mediaType) {
 
   container.appendChild(fragment);
   setupContainerDelegation(container);
-}
-
-function getItemFromElement(el) {
-  if (!el) return null;
-  const key = el.dataset.registryKey;
-  if (key && itemRegistry.has(key)) return itemRegistry.get(key);
-
-  if (el.dataset.item) {
-    try { return JSON.parse(el.dataset.item); } catch (e) { return null; }
-  }
-  return null;
 }
 
 function setupContainerDelegation(container) {
@@ -300,7 +298,7 @@ function setupContainerDelegation(container) {
   container.addEventListener('mousemove', (e) => {
     if (!container.classList.contains('dragging')) return;
     const x = e.pageX - container.offsetLeft;
-    if (Math.abs(x - startX) > 5) isDragging = true;
+    if (Math.abs(x - startX) > 10) isDragging = true;
     container.scrollLeft = scrollLeft - (x - startX) * 1.2;
   });
 
@@ -311,17 +309,17 @@ function setupContainerDelegation(container) {
   container.addEventListener('click', (e) => {
     if (isDragging) return;
     const card = e.target.closest('.poster-card');
-    const item = getItemFromElement(card);
-    if (item) showDetails(item);
+    if (card && card.dataset.item) {
+      showDetails(JSON.parse(card.dataset.item));
+    }
   });
 
   container.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') {
       const card = e.target.closest('.poster-card');
-      const item = getItemFromElement(card);
-      if (item) {
+      if (card && card.dataset.item) {
         e.preventDefault();
-        showDetails(item);
+        showDetails(JSON.parse(card.dataset.item));
       }
     }
   });
@@ -449,9 +447,7 @@ function loadVideo() {
       : `https://vidlink.pro/movie/${state.currentItem.id}?primaryColor=e50914&autoplay=false`;
   }
 
-  if (DOM.modalVideo.src !== embedURL) {
-    DOM.modalVideo.src = embedURL;
-  }
+  if (DOM.modalVideo.src !== embedURL) DOM.modalVideo.src = embedURL;
 }
 
 function switchServer(serverName) {
@@ -500,7 +496,7 @@ async function renderExtraDetails(item) {
 ========================================================= */
 
 async function loadTVSeasons(tvId, targetSeason = 1, targetEpisode = 1) {
-  const select = DOM.seasonSelect || document.getElementById('season-select');
+  const select = document.getElementById('season-select');
   if (!select) return;
   select.innerHTML = '';
 
@@ -529,7 +525,7 @@ async function loadTVSeasons(tvId, targetSeason = 1, targetEpisode = 1) {
 async function loadEpisodes(tvId, seasonNumber) {
   const token = ++episodeFetchToken;
   state.currentSeason = seasonNumber;
-  const container = DOM.episodesContainer || document.getElementById('episodes-container');
+  const container = document.getElementById('episodes-container');
   if (!container) return;
   container.innerHTML = '';
 
@@ -566,7 +562,7 @@ async function loadEpisodes(tvId, seasonNumber) {
 }
 
 function onSeasonChange() {
-  const select = DOM.seasonSelect || document.getElementById('season-select');
+  const select = document.getElementById('season-select');
   if (!select || !state.currentItem) return;
   state.currentEpisode = 1;
   loadEpisodes(state.currentItem.id, parseInt(select.value, 10));
@@ -592,7 +588,7 @@ function closeModal() {
 ========================================================= */
 
 function updateQuickControlsVisibility() {
-  const controls = DOM.playerQuickControls || document.getElementById('player-quick-controls');
+  const controls = document.getElementById('player-quick-controls');
   if (!controls) return;
   const isTv = state.currentItem && (state.currentItem.media_type === 'tv' || !state.currentItem.title);
   controls.style.display = isTv ? 'flex' : 'none';
@@ -619,7 +615,7 @@ function playNextEpisode() {
 
   state.currentEpisode += 1;
 
-  const container = DOM.episodesContainer || document.getElementById('episodes-container');
+  const container = document.getElementById('episodes-container');
   if (container) {
     const buttons = container.querySelectorAll('.episode-btn');
     buttons.forEach((btn, idx) => {
