@@ -1,5 +1,5 @@
 /* =========================================================
-   STREAMVAULT — JS ENGINE (UPDATED & STABILIZED)
+   STREAMVAULT — JS ENGINE (SMART PLAYBACK & STABILIZED)
 ========================================================= */
 
 const CONFIG = Object.freeze({
@@ -151,7 +151,6 @@ function initDOMReferences() {
   DOM.searchInput = document.getElementById('search-input');
   DOM.searchResults = document.getElementById('search-results');
 
-  // Setup Backdrop Close Handlers
   [DOM.modal, DOM.gridModal, DOM.searchModal].forEach(modalEl => {
     if (modalEl) {
       modalEl.addEventListener('click', (e) => {
@@ -237,7 +236,10 @@ async function fetchCategory(key, endpoint, params = {}) {
    CARD BUILDER & DELEGATED SCROLL / CLICK
 ========================================================= */
 
-function createPosterCard(item, mediaType) {
+function createPosterCard(item, mediaType, showProgress = false) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'poster-card-wrapper';
+
   const img = document.createElement('img');
   img.className = 'poster-card';
   img.src = item.poster_path ? `${CONFIG.POSTER_URL}${item.poster_path}` : CONFIG.PLACEHOLDER_IMG;
@@ -252,7 +254,7 @@ function createPosterCard(item, mediaType) {
     img.src = CONFIG.PLACEHOLDER_IMG; 
   };
 
-  img.dataset.item = JSON.stringify({
+  const itemData = {
     id: item.id,
     title: item.title || item.name,
     overview: item.overview,
@@ -260,12 +262,28 @@ function createPosterCard(item, mediaType) {
     backdrop_path: item.backdrop_path,
     vote_average: item.vote_average,
     media_type: item.media_type || mediaType
-  });
+  };
 
-  return img;
+  img.dataset.item = JSON.stringify(itemData);
+  wrapper.appendChild(img);
+
+  if (showProgress && item.savedTime && item.duration) {
+    const progressContainer = document.createElement('div');
+    progressContainer.className = 'progress-bar-container';
+
+    const fill = document.createElement('div');
+    fill.className = 'progress-bar-fill';
+    const percent = Math.min(100, Math.max(0, (item.savedTime / item.duration) * 100));
+    fill.style.width = `${percent}%`;
+
+    progressContainer.appendChild(fill);
+    wrapper.appendChild(progressContainer);
+  }
+
+  return wrapper;
 }
 
-function displayList(items, containerId, mediaType) {
+function displayList(items, containerId, mediaType, isContinueWatching = false) {
   const container = document.getElementById(containerId);
   if (!container) return;
 
@@ -273,7 +291,7 @@ function displayList(items, containerId, mediaType) {
   const fragment = document.createDocumentFragment();
 
   items.slice(0, 20).forEach(item => {
-    if (item.poster_path) fragment.appendChild(createPosterCard(item, mediaType));
+    if (item.poster_path) fragment.appendChild(createPosterCard(item, mediaType, isContinueWatching));
   });
 
   container.appendChild(fragment);
@@ -431,23 +449,35 @@ async function showDetails(item) {
 function loadVideo() {
   if (!state.currentItem || !DOM.modalVideo) return;
   const isTv = state.currentItem.media_type === 'tv' || !state.currentItem.title;
+  
+  const history = getContinueWatching();
+  const saved = history.find(i => i.id === state.currentItem.id);
+  const startTime = (saved && saved.savedSeason === state.currentSeason && saved.savedEpisode === state.currentEpisode) 
+    ? (saved.savedTime || 0) 
+    : 0;
+
   let embedURL = '';
 
   if (state.currentServer === 'vidcore') {
     embedURL = isTv 
-      ? `https://vidcore.net/embed/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}`
-      : `https://vidcore.net/embed/movie/${state.currentItem.id}`;
+      ? `https://vidcore.net/embed/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}?t=${startTime}`
+      : `https://vidcore.net/embed/movie/${state.currentItem.id}?t=${startTime}`;
   } else if (state.currentServer === 'videasy') {
     embedURL = isTv 
-      ? `https://player.videasy.net/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}`
-      : `https://player.videasy.net/movie/${state.currentItem.id}`;
+      ? `https://player.videasy.net/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}?start=${startTime}`
+      : `https://player.videasy.net/movie/${state.currentItem.id}?start=${startTime}`;
   } else {
     embedURL = isTv 
-      ? `https://vidlink.pro/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}?primaryColor=e50914&autoplay=false`
-      : `https://vidlink.pro/movie/${state.currentItem.id}?primaryColor=e50914&autoplay=false`;
+      ? `https://vidlink.pro/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}?primaryColor=e50914&autoplay=false&start=${startTime}`
+      : `https://vidlink.pro/movie/${state.currentItem.id}?primaryColor=e50914&autoplay=false&start=${startTime}`;
   }
 
-  if (DOM.modalVideo.src !== embedURL) DOM.modalVideo.src = embedURL;
+  if (DOM.modalVideo.src !== embedURL) {
+    DOM.modalVideo.src = embedURL;
+    if (startTime > 0) {
+      showToast(`Resuming from ${Math.floor(startTime / 60)}m ${startTime % 60}s`);
+    }
+  }
 }
 
 function switchServer(serverName) {
@@ -536,7 +566,6 @@ async function loadEpisodes(tvId, seasonNumber) {
     if (data) caches.episodes.set(cacheKey, data);
   }
 
-  // Early return check to prevent race conditions during rapid requests
   if (token !== episodeFetchToken) return;
 
   if (data?.episodes?.length) {
@@ -585,8 +614,31 @@ function closeModal() {
 }
 
 /* =========================================================
-   PLAYBACK CONTROLS & KEYBOARD
+   PLAYBACK CONTROLS & EVENT LISTENERS
 ========================================================= */
+
+window.addEventListener('message', (event) => {
+  if (!event.data) return;
+
+  try {
+    const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+
+    if (data.event === 'timeupdate' || data.type === 'timeupdate') {
+      const currentTime = data.currentTime || data.seconds || 0;
+      const duration = data.duration || 0;
+      if (currentTime > 0) {
+        saveCurrentProgress(currentTime, duration);
+      }
+    }
+
+    if (data.event === 'ended' || data.type === 'ended') {
+      showToast('Episode finished! Loading next...');
+      setTimeout(() => playNextEpisode(), 1500);
+    }
+  } catch (e) {
+    // Non-JSON message ignore
+  }
+});
 
 function updateQuickControlsVisibility() {
   const controls = document.getElementById('player-quick-controls');
@@ -868,7 +920,7 @@ function clearWatchlist() {
   showToast('Watchlist cleared');
 }
 
-function saveCurrentProgress() {
+function saveCurrentProgress(currentTime = 0, duration = 0) {
   if (!state.currentItem) return;
   let list = getContinueWatching();
   const idx = list.findIndex(i => i.id === state.currentItem.id);
@@ -877,12 +929,14 @@ function saveCurrentProgress() {
     ...state.currentItem,
     savedSeason: state.currentSeason,
     savedEpisode: state.currentEpisode,
+    savedTime: Math.floor(currentTime),
+    duration: Math.floor(duration),
     lastWatched: Date.now()
   };
 
   if (idx > -1) list.splice(idx, 1);
   list.unshift(payload);
-  if (list.length > 15) list.pop();
+  if (list.length > 20) list.pop();
 
   setStorage('continueWatching', list);
   renderContinueWatchingRow();
@@ -893,7 +947,7 @@ function renderContinueWatchingRow() {
   const row = document.getElementById('continue-row');
   if (row) {
     row.style.display = list.length ? 'block' : 'none';
-    if (list.length) displayList(list, 'continue-list', 'movie');
+    if (list.length) displayList(list, 'continue-list', 'movie', true);
   }
 }
 
