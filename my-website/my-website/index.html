@@ -216,29 +216,39 @@
 
   <!-- SEE ALL GRID MODAL -->
   <div id="grid-modal" class="grid-modal" role="dialog" aria-hidden="true">
-    <button class="close" onclick="closeGridModal()" aria-label="Close Modal">&times;</button>
-    <div class="grid-header">
-      <h2 id="grid-modal-title">Category Details</h2>
-      <div id="genre-tabs" class="genre-tabs"></div>
-    </div>
-    <div id="grid-scroll-area" class="grid-scroll-area">
-      <div id="grid-modal-results" class="grid-container"></div>
+    <div class="modal-content" style="display: flex; flex-direction: column; height: 90vh;">
+      <button class="close" onclick="closeGridModal()" aria-label="Close modal">&times;</button>
+      <div class="grid-header">
+        <h2 id="grid-modal-title">Browse All</h2>
+        <div id="genre-tabs" class="genre-tabs"></div>
+      </div>
+      <div id="grid-scroll-area" class="grid-scroll-area">
+        <div id="grid-modal-results" class="grid-container"></div>
+      </div>
     </div>
   </div>
 
   <!-- SEARCH MODAL -->
   <div id="search-modal" class="search-modal" role="dialog" aria-hidden="true">
-    <button class="close" onclick="closeSearchModal()" aria-label="Close Search">&times;</button>
-    <div class="search-input-wrapper">
-      <input 
-        type="text" 
-        id="search-input" 
-        placeholder="Type movie or show name..." 
-        oninput="debounceSearch()" 
-      />
+    <div class="modal-content" style="display: flex; flex-direction: column; height: 85vh;">
+      <button class="close" onclick="closeSearchModal()" aria-label="Close search">&times;</button>
+      <div class="search-input-wrapper">
+        <input 
+          type="text" 
+          id="search-input" 
+          placeholder="Type title, actor, or genre..." 
+          oninput="debounceSearch()" 
+          aria-label="Search media input"
+        />
+      </div>
+      <div id="search-results" class="results"></div>
     </div>
-    <div id="search-results" class="results"></div>
   </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <p>&copy; 2026 StreamVault. All rights reserved.</p>
+  </footer>
 
 </body>
 </html>
