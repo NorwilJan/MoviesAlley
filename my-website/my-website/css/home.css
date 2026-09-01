@@ -1,5 +1,5 @@
 /* =========================================================
-   STREAMVAULT — PRODUCTION CSS ENGINE (UPDATED)
+   STREAMVAULT — PRODUCTION CSS ENGINE
 ========================================================= */
 
 :root {
@@ -413,7 +413,6 @@ body.modal-open {
   display: none;
 }
 
-/* Poster Card Wrapper & Progress Bar */
 .poster-card-wrapper {
   position: relative;
   display: inline-block;
