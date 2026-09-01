@@ -706,34 +706,6 @@ body.modal-open {
 .episode-btn:hover { background: #333; color: #fff; }
 .episode-btn.active { background: var(--red); color: #fff; border-color: var(--red); }
 
-/* Server Switcher */
-.server-switcher {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 10px;
-  font-size: 13px;
-  color: var(--muted);
-}
-
-.server-btn {
-  background: #222;
-  border: 1px solid var(--border);
-  color: #aaa;
-  padding: 4px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-  transition: all 0.2s ease;
-}
-
-.server-btn.active {
-  background: #fff;
-  color: #000;
-  border-color: #fff;
-  font-weight: 700;
-}
-
 @media (min-width: 768px) {
   .modal-body {
     flex-direction: row;
@@ -745,12 +717,72 @@ body.modal-open {
   }
 }
 
-/* PLAYER QUICK CONTROLS */
+/* =========================================================
+   SERVER SWITCHER & RESPONSIVE VIDEO PLAYER (16:9)
+========================================================= */
+
 .player-wrapper {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin: 20px 0 10px;
+  margin: 24px 0 10px;
+}
+
+.server-switcher-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 10px 14px;
+  border-radius: 8px;
+}
+
+.server-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.server-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.server-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #bbb;
+  padding: 7px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.server-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.server-btn.active {
+  background: var(--red);
+  color: #fff;
+  border-color: var(--red);
+  font-weight: 700;
+  box-shadow: 0 0 14px var(--glow);
 }
 
 .video-container {
@@ -760,13 +792,15 @@ body.modal-open {
   margin: 0;
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
 }
 
 .video-container iframe {
   width: 100%;
   height: 100%;
   border: none;
+  display: block;
 }
 
 .player-quick-controls {
