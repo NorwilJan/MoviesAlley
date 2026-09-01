@@ -169,20 +169,33 @@
             </div>
             <div id="episodes-container" class="episodes-container"></div>
           </div>
-
-          <div class="server-switcher">
-            <span>Server:</span>
-            <button class="server-btn active" data-server="vidlink" onclick="switchServer('vidlink')">Server 1 (VidLink)</button>
-            <button class="server-btn" data-server="vidcore" onclick="switchServer('vidcore')">Server 2 (VidCore)</button>
-            <button class="server-btn" data-server="videasy" onclick="switchServer('videasy')">Server 3 (VidEasy)</button>
-          </div>
         </div>
       </div>
 
-      <!-- PLAYER CONTAINER & INLINE CONTROLS -->
+      <!-- PLAYER CONTAINER & SERVER SWITCHER -->
       <div class="player-wrapper">
+        <!-- SERVER SWITCHER TABS -->
+        <div class="server-switcher-bar">
+          <span class="server-label"><i class="fa-solid fa-server"></i> Select Server:</span>
+          <div class="server-tabs">
+            <button class="server-btn active" data-server="vidcore" onclick="switchServer('vidcore')">
+              <i class="fa-solid fa-play"></i> Server 1 (VidCore)
+            </button>
+            <button class="server-btn" data-server="vidlink" onclick="switchServer('vidlink')">
+              <i class="fa-solid fa-film"></i> Server 2 (VidLink)
+            </button>
+          </div>
+        </div>
+
+        <!-- RESPONSIVE 16:9 VIDEO CONTAINER -->
         <div id="player-container" class="video-container">
-          <iframe id="modal-video" src="about:blank" allowfullscreen title="Video Player"></iframe>
+          <iframe 
+            id="modal-video" 
+            src="about:blank" 
+            allowfullscreen 
+            allow="autoplay; fullscreen; picture-in-picture"
+            title="Video Player">
+          </iframe>
         </div>
 
         <div id="player-quick-controls" class="player-quick-controls" style="display: none;">
@@ -222,18 +235,10 @@
         id="search-input" 
         placeholder="Type movie or show name..." 
         oninput="debounceSearch()" 
-        aria-label="Search Input"
       />
     </div>
     <div id="search-results" class="results"></div>
   </div>
-
-  <!-- FOOTER -->
-  <footer class="footer">
-    <div class="footer-content">
-      <p>&copy; 2026 StreamVault. All rights reserved.</p>
-    </div>
-  </footer>
 
 </body>
 </html>
