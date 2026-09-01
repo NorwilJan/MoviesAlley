@@ -401,6 +401,7 @@ body.modal-open {
   scroll-snap-type: x proximity;
   cursor: grab;
   user-select: none;
+  touch-action: pan-x pan-y;
 }
 
 .list.dragging {
