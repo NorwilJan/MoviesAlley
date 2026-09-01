@@ -58,7 +58,7 @@ const state = {
   currentEpisode: 1,
   totalEpisodesInSeason: 0,
   currentTabCategory: 'all',
-  currentServer: 'vidlink',
+  currentServer: 'vidcore', // Primary Default: Server 1
   gridCategory: null,
   gridPage: 1,
   gridLoading: false,
@@ -458,15 +458,14 @@ function loadVideo() {
 
   let embedURL = '';
 
+  // SERVER 1: VIDCORE (PRIMARY)
   if (state.currentServer === 'vidcore') {
     embedURL = isTv 
-      ? `https://vidcore.net/embed/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}?t=${startTime}`
-      : `https://vidcore.net/embed/movie/${state.currentItem.id}?t=${startTime}`;
-  } else if (state.currentServer === 'videasy') {
-    embedURL = isTv 
-      ? `https://player.videasy.net/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}?start=${startTime}`
-      : `https://player.videasy.net/movie/${state.currentItem.id}?start=${startTime}`;
-  } else {
+      ? `https://vidcore.org/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}?t=${startTime}`
+      : `https://vidcore.org/movie/${state.currentItem.id}?t=${startTime}`;
+  } 
+  // SERVER 2: VIDLINK (BACKUP)
+  else if (state.currentServer === 'vidlink') {
     embedURL = isTv 
       ? `https://vidlink.pro/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}?primaryColor=e50914&autoplay=false&start=${startTime}`
       : `https://vidlink.pro/movie/${state.currentItem.id}?primaryColor=e50914&autoplay=false&start=${startTime}`;
@@ -486,7 +485,8 @@ function switchServer(serverName) {
     btn.classList.toggle('active', btn.dataset.server === serverName);
   });
   loadVideo();
-  showToast(`Switched server to ${serverName.toUpperCase()}`);
+  const serverLabel = serverName === 'vidcore' ? 'Server 1 (VidCore)' : 'Server 2 (VidLink)';
+  showToast(`Switched to ${serverLabel}`);
 }
 
 async function renderExtraDetails(item) {
