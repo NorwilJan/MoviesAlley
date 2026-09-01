@@ -536,6 +536,7 @@ async function loadEpisodes(tvId, seasonNumber) {
     if (data) caches.episodes.set(cacheKey, data);
   }
 
+  // Early return check to prevent race conditions during rapid requests
   if (token !== episodeFetchToken) return;
 
   if (data?.episodes?.length) {
@@ -632,11 +633,18 @@ function toggleFullscreen() {
   const container = document.getElementById('player-container');
   if (!container) return;
 
-  if (!document.fullscreenElement) {
-    if (container.requestFullscreen) container.requestFullscreen();
-    else if (container.webkitRequestFullscreen) container.webkitRequestFullscreen();
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    if (container.requestFullscreen) {
+      container.requestFullscreen();
+    } else if (container.webkitRequestFullscreen) {
+      container.webkitRequestFullscreen();
+    }
   } else {
-    if (document.exitFullscreen) document.exitFullscreen();
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if (document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
+    }
   }
 }
 
