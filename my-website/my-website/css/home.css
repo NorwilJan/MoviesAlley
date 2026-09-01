@@ -1,5 +1,5 @@
 /* =========================================================
-   STREAMVAULT — PRODUCTION CSS ENGINE (UPDATED)
+   STREAMVAULT — PRODUCTION CSS ENGINE (OPTIMIZED)
 ========================================================= */
 
 :root {
@@ -588,6 +588,7 @@ body.modal-open {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  flex: 1;
 }
 
 .modal-text h2 {
@@ -678,6 +679,7 @@ body.modal-open {
 .server-switcher {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
   margin-top: 10px;
   font-size: 13px;
@@ -688,7 +690,7 @@ body.modal-open {
   background: #222;
   border: 1px solid var(--border);
   color: #aaa;
-  padding: 4px 12px;
+  padding: 6px 12px;
   border-radius: 4px;
   cursor: pointer;
   font-size: 12px;
