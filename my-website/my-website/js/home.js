@@ -276,7 +276,6 @@ function getItemFromElement(el) {
   const key = el.dataset.registryKey;
   if (key && itemRegistry.has(key)) return itemRegistry.get(key);
 
-  // Fallback for stored JSON string if key missing
   if (el.dataset.item) {
     try { return JSON.parse(el.dataset.item); } catch (e) { return null; }
   }
