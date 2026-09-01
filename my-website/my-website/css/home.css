@@ -413,10 +413,16 @@ body.modal-open {
   display: none;
 }
 
-.poster-card {
-  width: var(--poster-width);
-  aspect-ratio: var(--poster-aspect);
+/* Poster Card Wrapper & Progress Bar */
+.poster-card-wrapper {
+  position: relative;
+  display: inline-block;
   flex: 0 0 var(--poster-width);
+}
+
+.poster-card {
+  width: 100%;
+  aspect-ratio: var(--poster-aspect);
   object-fit: cover;
   border-radius: 8px;
   cursor: pointer;
@@ -433,6 +439,26 @@ body.modal-open {
   filter: brightness(1.08);
   box-shadow: 0 14px 32px rgba(0, 0, 0, 0.7), 0 0 15px rgba(229, 9, 20, 0.2);
   border-color: rgba(255, 255, 255, 0.2);
+}
+
+.progress-bar-container {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.7);
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--red);
+  box-shadow: 0 0 8px var(--red);
+  transition: width 0.3s ease;
 }
 
 .scroll-arrow {
