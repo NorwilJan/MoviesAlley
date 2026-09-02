@@ -172,21 +172,8 @@
         </div>
       </div>
 
-      <!-- PLAYER CONTAINER & SERVER SWITCHER -->
+      <!-- PLAYER CONTAINER -->
       <div class="player-wrapper">
-        <!-- SERVER SWITCHER TABS -->
-        <div class="server-switcher-bar">
-          <span class="server-label"><i class="fa-solid fa-server"></i> Select Server:</span>
-          <div class="server-tabs">
-            <button class="server-btn active" data-server="vidcore" onclick="switchServer('vidcore')">
-              <i class="fa-solid fa-play"></i> Server 1 (VidCore)
-            </button>
-            <button class="server-btn" data-server="vidlink" onclick="switchServer('vidlink')">
-              <i class="fa-solid fa-film"></i> Server 2 (VidLink)
-            </button>
-          </div>
-        </div>
-
         <!-- RESPONSIVE 16:9 VIDEO CONTAINER -->
         <div id="player-container" class="video-container">
           <iframe 
@@ -217,10 +204,8 @@
   <!-- SEE ALL GRID MODAL -->
   <div id="grid-modal" class="grid-modal" role="dialog" aria-hidden="true">
     <div class="grid-header">
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h2 id="grid-modal-title">Browse</h2>
-        <button class="close" onclick="closeGridModal()" aria-label="Close browse modal">&times;</button>
-      </div>
+      <button class="close" onclick="closeGridModal()" aria-label="Close modal">&times;</button>
+      <h2 id="grid-modal-title">Browse</h2>
       <div id="genre-tabs" class="genre-tabs"></div>
     </div>
     <div id="grid-scroll-area" class="grid-scroll-area">
@@ -230,15 +215,15 @@
 
   <!-- SEARCH MODAL -->
   <div id="search-modal" class="search-modal" role="dialog" aria-hidden="true">
+    <button class="close" onclick="closeSearchModal()" aria-label="Close modal">&times;</button>
     <div class="search-input-wrapper">
       <input 
         type="text" 
         id="search-input" 
-        placeholder="Type to search movies, TV shows..." 
-        oninput="debounceSearch()" 
-        aria-label="Search field"
+        placeholder="Search for movies, TV shows, anime..." 
+        oninput="debounceSearch()"
+        aria-label="Search query input"
       />
-      <button class="close" onclick="closeSearchModal()" aria-label="Close search">&times;</button>
     </div>
     <div id="search-results" class="results"></div>
   </div>
