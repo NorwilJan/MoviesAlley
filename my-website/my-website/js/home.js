@@ -58,7 +58,7 @@ const state = {
   currentEpisode: 1,
   totalEpisodesInSeason: 0,
   currentTabCategory: 'all',
-  currentServer: 'vidcore', // Primary Default: Server 1
+  currentServer: 'vidlink', // Primary Default: VidLink
   gridCategory: null,
   gridPage: 1,
   gridLoading: false,
@@ -456,20 +456,10 @@ function loadVideo() {
     ? (saved.savedTime || 0) 
     : 0;
 
-  let embedURL = '';
-
-  // SERVER 1: VIDCORE (PRIMARY)
-  if (state.currentServer === 'vidcore') {
-    embedURL = isTv 
-      ? `https://vidcore.org/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}?t=${startTime}`
-      : `https://vidcore.org/movie/${state.currentItem.id}?t=${startTime}`;
-  } 
-  // SERVER 2: VIDLINK (BACKUP)
-  else if (state.currentServer === 'vidlink') {
-    embedURL = isTv 
-      ? `https://vidlink.pro/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}?primaryColor=e50914&autoplay=false&start=${startTime}`
-      : `https://vidlink.pro/movie/${state.currentItem.id}?primaryColor=e50914&autoplay=false&start=${startTime}`;
-  }
+  // PRIMARY PLAYER: VIDLINK
+  const embedURL = isTv 
+    ? `https://vidlink.pro/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}?primaryColor=e50914&autoplay=false&start=${startTime}`
+    : `https://vidlink.pro/movie/${state.currentItem.id}?primaryColor=e50914&autoplay=false&start=${startTime}`;
 
   if (DOM.modalVideo.src !== embedURL) {
     DOM.modalVideo.src = embedURL;
@@ -477,16 +467,6 @@ function loadVideo() {
       showToast(`Resuming from ${Math.floor(startTime / 60)}m ${startTime % 60}s`);
     }
   }
-}
-
-function switchServer(serverName) {
-  state.currentServer = serverName;
-  document.querySelectorAll('.server-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.server === serverName);
-  });
-  loadVideo();
-  const serverLabel = serverName === 'vidcore' ? 'Server 1 (VidCore)' : 'Server 2 (VidLink)';
-  showToast(`Switched to ${serverLabel}`);
 }
 
 async function renderExtraDetails(item) {
