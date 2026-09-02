@@ -944,7 +944,7 @@ function saveCurrentProgress(currentTime = 0, duration = 0) {
 
 function renderContinueWatchingRow() {
   const list = getContinueWatching();
-  const row = document.getElementById('continue-row');
+  const row = document.left || document.getElementById('continue-row');
   if (row) {
     row.style.display = list.length ? 'block' : 'none';
     if (list.length) displayList(list, 'continue-list', 'movie', true);
