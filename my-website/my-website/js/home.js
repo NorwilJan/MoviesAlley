@@ -58,7 +58,7 @@ const state = {
   currentEpisode: 1,
   totalEpisodesInSeason: 0,
   currentTabCategory: 'all',
-  currentServer: 'vidlink', // Primary Default: VidLink
+  currentServer: 'vidlink',
   gridCategory: null,
   gridPage: 1,
   gridLoading: false,
@@ -75,6 +75,20 @@ const caches = {
 
 let searchTimeout = null;
 let episodeFetchToken = 0;
+
+/* =========================================================
+   THEME ACCENT SWITCHER
+========================================================= */
+
+function setTheme(colorHex) {
+  document.documentElement.style.setProperty('--red', colorHex);
+  document.documentElement.style.setProperty('--glow', `${colorHex}55`);
+  localStorage.setItem('sv_theme', colorHex);
+  showToast('Theme updated!');
+}
+
+const savedTheme = localStorage.getItem('sv_theme');
+if (savedTheme) setTheme(savedTheme);
 
 /* =========================================================
    STORAGE MANAGEMENT (WITH QUOTA FAIL-SAFE)
@@ -150,14 +164,16 @@ function initDOMReferences() {
   DOM.searchModal = document.getElementById('search-modal');
   DOM.searchInput = document.getElementById('search-input');
   DOM.searchResults = document.getElementById('search-results');
+  DOM.shortcutsModal = document.getElementById('shortcuts-modal');
 
-  [DOM.modal, DOM.gridModal, DOM.searchModal].forEach(modalEl => {
+  [DOM.modal, DOM.gridModal, DOM.searchModal, DOM.shortcutsModal].forEach(modalEl => {
     if (modalEl) {
       modalEl.addEventListener('click', (e) => {
         if (e.target === modalEl) {
           if (modalEl === DOM.modal) closeModal();
           if (modalEl === DOM.gridModal) closeGridModal();
           if (modalEl === DOM.searchModal) closeSearchModal();
+          if (modalEl === DOM.shortcutsModal) closeShortcutsModal();
         }
       });
     }
@@ -456,7 +472,6 @@ function loadVideo() {
     ? (saved.savedTime || 0) 
     : 0;
 
-  // PRIMARY PLAYER: VIDLINK
   const embedURL = isTv 
     ? `https://vidlink.pro/tv/${state.currentItem.id}/${state.currentSeason}/${state.currentEpisode}?primaryColor=e50914&autoplay=false&start=${startTime}`
     : `https://vidlink.pro/movie/${state.currentItem.id}?primaryColor=e50914&autoplay=false&start=${startTime}`;
@@ -492,12 +507,32 @@ async function renderExtraDetails(item) {
 
   if (data.credits?.cast?.length && castContainer) {
     const castItems = data.credits.cast.slice(0, 10).map(actor => `
-      <div class="cast-item">
+      <div class="cast-item" onclick="loadActorFilmography(${actor.id}, '${(actor.name || '').replace(/'/g, "\\'")}')">
         <img src="${actor.profile_path ? `https://image.tmdb.org/t/p/w185${actor.profile_path}` : CONFIG.PLACEHOLDER_IMG}" alt="${actor.name}" loading="lazy" />
         <span>${actor.name}</span>
       </div>`).join('');
 
     castContainer.innerHTML = `<h3 style="margin-top:20px; font-size:1.1rem; margin-bottom:10px;">Top Cast</h3><div class="cast-grid">${castItems}</div>`;
+  }
+}
+
+async function loadActorFilmography(actorId, actorName) {
+  closeModal();
+  openGridModal('watchlist');
+  if (DOM.gridModalTitle) DOM.gridModalTitle.textContent = `${actorName}'s Filmography`;
+  if (DOM.genreTabs) DOM.genreTabs.style.display = 'none';
+
+  const data = await tmdbFetch(`/person/${actorId}/combined_credits`);
+  const castList = (data?.cast || []).filter(item => item.poster_path);
+
+  if (DOM.gridResults) {
+    DOM.gridResults.innerHTML = '';
+    const fragment = document.createDocumentFragment();
+    castList.forEach(item => {
+      fragment.appendChild(createPosterCard(item, item.media_type || 'movie'));
+    });
+    DOM.gridResults.appendChild(fragment);
+    setupContainerDelegation(DOM.gridResults);
   }
 }
 
@@ -680,10 +715,32 @@ function toggleFullscreen() {
   }
 }
 
+function openShortcutsModal() {
+  if (DOM.shortcutsModal) {
+    DOM.shortcutsModal.classList.add('active');
+    DOM.shortcutsModal.setAttribute('aria-hidden', 'false');
+    toggleBodyScroll(true);
+  }
+}
+
+function closeShortcutsModal() {
+  if (DOM.shortcutsModal) {
+    DOM.shortcutsModal.classList.remove('active');
+    DOM.shortcutsModal.setAttribute('aria-hidden', 'true');
+    toggleBodyScroll(false);
+  }
+}
+
 document.addEventListener('keydown', (e) => {
   if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
 
   const isModalActive = DOM.modal && DOM.modal.classList.contains('active');
+
+  if (e.key === '?') {
+    e.preventDefault();
+    openShortcutsModal();
+    return;
+  }
 
   switch (e.key.toLowerCase()) {
     case 'n':
@@ -710,6 +767,7 @@ document.addEventListener('keydown', (e) => {
       closeModal();
       closeGridModal();
       closeSearchModal();
+      closeShortcutsModal();
       break;
   }
 });
