@@ -28,6 +28,12 @@
     </nav>
 
     <div style="display: flex; align-items: center; gap: 12px;">
+      <div class="theme-picker" style="display: flex; gap: 6px; align-items: center;" title="Theme Accent">
+        <button onclick="setTheme('#e50914')" style="width:16px;height:16px;border-radius:50%;background:#e50914;border:none;cursor:pointer;" aria-label="Netflix Red"></button>
+        <button onclick="setTheme('#3b82f6')" style="width:16px;height:16px;border-radius:50%;background:#3b82f6;border:none;cursor:pointer;" aria-label="Electric Blue"></button>
+        <button onclick="setTheme('#10b981')" style="width:16px;height:16px;border-radius:50%;background:#10b981;border:none;cursor:pointer;" aria-label="Emerald Green"></button>
+      </div>
+
       <button class="surprise-nav-btn" onclick="surpriseMe()" aria-label="Surprise Me">
         <i class="fa-solid fa-dice"></i>
         <span>Surprise</span>
@@ -174,7 +180,6 @@
 
       <!-- PLAYER CONTAINER -->
       <div class="player-wrapper">
-        <!-- RESPONSIVE 16:9 VIDEO CONTAINER -->
         <div id="player-container" class="video-container">
           <iframe 
             id="modal-video" 
@@ -195,7 +200,6 @@
         </div>
       </div>
 
-      <!-- TRAILER AND CAST CONTAINER -->
       <div id="modal-trailer-container"></div>
       <div id="modal-cast-container"></div>
     </div>
@@ -226,6 +230,21 @@
       />
     </div>
     <div id="search-results" class="results"></div>
+  </div>
+
+  <!-- KEYBOARD SHORTCUTS MODAL -->
+  <div id="shortcuts-modal" class="modal" role="dialog" aria-hidden="true">
+    <div class="modal-content" style="max-width: 500px;">
+      <button class="close" onclick="closeShortcutsModal()" aria-label="Close">&times;</button>
+      <h2 style="margin-bottom: 16px; font-size: 1.4rem;">Keyboard Shortcuts</h2>
+      <ul style="list-style: none; display: flex; flex-direction: column; gap: 12px; color: #ccc; font-size: 14px;">
+        <li><kbd style="background:#222; padding:4px 8px; border-radius:4px; border:1px solid #444; color:#fff;">/</kbd> or <kbd style="background:#222; padding:4px 8px; border-radius:4px; border:1px solid #444; color:#fff;">M</kbd> — Open Search</li>
+        <li><kbd style="background:#222; padding:4px 8px; border-radius:4px; border:1px solid #444; color:#fff;">N</kbd> — Play Next Episode (In Modal)</li>
+        <li><kbd style="background:#222; padding:4px 8px; border-radius:4px; border:1px solid #444; color:#fff;">F</kbd> — Toggle Fullscreen (In Player)</li>
+        <li><kbd style="background:#222; padding:4px 8px; border-radius:4px; border:1px solid #444; color:#fff;">?</kbd> — Open This Shortcuts Guide</li>
+        <li><kbd style="background:#222; padding:4px 8px; border-radius:4px; border:1px solid #444; color:#fff;">Esc</kbd> — Close Active Modals</li>
+      </ul>
+    </div>
   </div>
 
   <!-- FOOTER -->
