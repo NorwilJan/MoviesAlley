@@ -437,7 +437,7 @@ body.modal-open {
 .poster-card:hover {
   transform: translateY(-6px) scale(1.03);
   filter: brightness(1.08);
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.7), 0 0 15px rgba(229, 9, 20, 0.2);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.7), 0 0 15px var(--glow);
   border-color: rgba(255, 255, 255, 0.2);
 }
 
@@ -856,6 +856,12 @@ body.modal-open {
   flex: 0 0 85px;
   text-align: center;
   font-size: 11px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.cast-item:hover {
+  transform: scale(1.05);
 }
 
 .cast-item img {
