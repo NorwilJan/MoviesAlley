@@ -3,254 +3,362 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>StreamVault — Watch Movies & TV Shows</title>
-  <link rel="stylesheet" href="css/home.css" />
-  <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <script defer src="js/home.js"></script>
+
+  <title>XAUUSD AI Signal</title>
+
+  <link rel="stylesheet" href="Home.css" />
 </head>
+
 <body>
 
-  <!-- NAVBAR -->
-  <header class="navbar">
-    <a href="#" aria-label="StreamVault Home">
-      <img src="logo.png" alt="StreamVault Logo" />
-    </a>
+  <div class="app">
 
-    <nav class="nav-links">
-      <a href="#" class="active" onclick="filterContent('all', this)">Home</a>
-      <a href="#" onclick="filterContent('movie', this)">Movies</a>
-      <a href="#" onclick="filterContent('tv', this)">TV Shows</a>
-      <a href="#" onclick="filterContent('anime', this)">Anime</a>
-      <a href="#" class="nav-badge-link" onclick="openGridModal('watchlist')">
-        My List <span id="watchlist-badge" class="nav-badge" style="display: none;">0</span>
-      </a>
-    </nav>
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
 
-    <div style="display: flex; align-items: center; gap: 12px;">
-      <div class="theme-picker" style="display: flex; gap: 6px; align-items: center;" title="Theme Accent">
-        <button onclick="setTheme('#e50914')" style="width:16px;height:16px;border-radius:50%;background:#e50914;border:none;cursor:pointer;" aria-label="Netflix Red"></button>
-        <button onclick="setTheme('#3b82f6')" style="width:16px;height:16px;border-radius:50%;background:#3b82f6;border:none;cursor:pointer;" aria-label="Electric Blue"></button>
-        <button onclick="setTheme('#10b981')" style="width:16px;height:16px;border-radius:50%;background:#10b981;border:none;cursor:pointer;" aria-label="Emerald Green"></button>
+      <div class="logo">
+        <div class="logo-icon">AI</div>
+        <div>
+          <h2>GoldAI</h2>
+          <span>Trading Assistant</span>
+        </div>
       </div>
 
-      <button class="surprise-nav-btn" onclick="surpriseMe()" aria-label="Surprise Me">
-        <i class="fa-solid fa-dice"></i>
-        <span>Surprise</span>
-      </button>
+      <nav>
+        <a href="#" class="active">
+          <span>📊</span>
+          Dashboard
+        </a>
 
-      <input 
-        type="text" 
-        class="search-bar" 
-        placeholder="Search... (Press /)" 
-        onclick="openSearchModal()" 
-        readonly 
-        aria-label="Search media"
-      />
-    </div>
-  </header>
+        <a href="#">
+          <span>📈</span>
+          Signals
+        </a>
 
-  <!-- MAIN BANNER -->
-  <section id="banner" class="banner">
-    <div class="banner-content">
-      <h1 id="banner-title">Loading Featured...</h1>
-      <div class="banner-btn-group">
-        <button class="banner-btn" onclick="playBanner()">
-          <i class="fa-solid fa-play"></i> Watch Now
-        </button>
-      </div>
-    </div>
-  </section>
+        <a href="#">
+          <span>📋</span>
+          Trade History
+        </a>
 
-  <!-- MAIN CONTENT CONTAINER -->
-  <main>
-    <!-- CONTINUE WATCHING ROW -->
-    <section id="continue-row" class="row" style="display: none;">
-      <div class="row-header">
-        <h2>Continue Watching</h2>
-        <button class="clear-btn" onclick="clearContinueWatching()">Clear All</button>
-      </div>
-      <div class="list-wrapper">
-        <div id="continue-list" class="list"></div>
-      </div>
-    </section>
+        <a href="#">
+          <span>⚙️</span>
+          Settings
+        </a>
+      </nav>
 
-    <!-- WATCHLIST ROW -->
-    <section id="watchlist-row" class="row" style="display: none;">
-      <div class="row-header">
-        <h2>My List</h2>
-        <button class="clear-btn" onclick="clearWatchlist()">Clear All</button>
+      <div class="connection">
+        <div class="status-dot"></div>
+        <div>
+          <strong>System Online</strong>
+          <small>MT5 connection pending</small>
+        </div>
       </div>
-      <div class="list-wrapper">
-        <div id="watchlist-list" class="list"></div>
-      </div>
-    </section>
 
-    <!-- TRENDING MOVIES -->
-    <section id="movies-row" class="row">
-      <div class="row-header">
-        <h2>Trending Movies</h2>
-        <button class="see-all-btn" onclick="openGridModal('movies')">See All</button>
-      </div>
-      <div class="list-wrapper">
-        <button class="scroll-arrow left" onclick="scrollList('movies-list', -1)" aria-label="Scroll left"><i class="fa-solid fa-chevron-left"></i></button>
-        <div id="movies-list" class="list"></div>
-        <button class="scroll-arrow right" onclick="scrollList('movies-list', 1)" aria-label="Scroll right"><i class="fa-solid fa-chevron-right"></i></button>
-      </div>
-    </section>
+    </aside>
 
-    <!-- TRENDING TV SHOWS -->
-    <section id="tvshows-row" class="row">
-      <div class="row-header">
-        <h2>Trending TV Shows</h2>
-        <button class="see-all-btn" onclick="openGridModal('tv')">See All</button>
-      </div>
-      <div class="list-wrapper">
-        <button class="scroll-arrow left" onclick="scrollList('tvshows-list', -1)" aria-label="Scroll left"><i class="fa-solid fa-chevron-left"></i></button>
-        <div id="tvshows-list" class="list"></div>
-        <button class="scroll-arrow right" onclick="scrollList('tvshows-list', 1)" aria-label="Scroll right"><i class="fa-solid fa-chevron-right"></i></button>
-      </div>
-    </section>
 
-    <!-- ANIME ROW -->
-    <section id="anime-row" class="row">
-      <div class="row-header">
-        <h2>Popular Anime</h2>
-        <button class="see-all-btn" onclick="openGridModal('anime')">See All</button>
-      </div>
-      <div class="list-wrapper">
-        <button class="scroll-arrow left" onclick="scrollList('anime-list', -1)" aria-label="Scroll left"><i class="fa-solid fa-chevron-left"></i></button>
-        <div id="anime-list" class="list"></div>
-        <button class="scroll-arrow right" onclick="scrollList('anime-list', 1)" aria-label="Scroll right"><i class="fa-solid fa-chevron-right"></i></button>
-      </div>
-    </section>
+    <!-- MAIN CONTENT -->
+    <main class="main">
 
-    <!-- TAGALOG MOVIES -->
-    <section id="tagalog-row" class="row">
-      <div class="row-header">
-        <h2>Filipino Cinema</h2>
-        <button class="see-all-btn" onclick="openGridModal('tagalog')">See All</button>
-      </div>
-      <div class="list-wrapper">
-        <button class="scroll-arrow left" onclick="scrollList('tagalog-list', -1)" aria-label="Scroll left"><i class="fa-solid fa-chevron-left"></i></button>
-        <div id="tagalog-list" class="list"></div>
-        <button class="scroll-arrow right" onclick="scrollList('tagalog-list', 1)" aria-label="Scroll right"><i class="fa-solid fa-chevron-right"></i></button>
-      </div>
-    </section>
+      <!-- HEADER -->
+      <header class="topbar">
 
-    <!-- K-DRAMA ROW -->
-    <section id="kdrama-row" class="row">
-      <div class="row-header">
-        <h2>Korean Dramas</h2>
-        <button class="see-all-btn" onclick="openGridModal('kdrama')">See All</button>
-      </div>
-      <div class="list-wrapper">
-        <button class="scroll-arrow left" onclick="scrollList('kdrama-list', -1)" aria-label="Scroll left"><i class="fa-solid fa-chevron-left"></i></button>
-        <div id="kdrama-list" class="list"></div>
-        <button class="scroll-arrow right" onclick="scrollList('kdrama-list', 1)" aria-label="Scroll right"><i class="fa-solid fa-chevron-right"></i></button>
-      </div>
-    </section>
-  </main>
+        <div>
+          <h1>XAUUSD AI Signal</h1>
+          <p>Gold / US Dollar · 15 Minute Analysis</p>
+        </div>
 
-  <!-- DETAILS MODAL -->
-  <div id="modal" class="modal" role="dialog" aria-hidden="true">
-    <div class="modal-content">
-      <button class="close" onclick="closeModal()" aria-label="Close modal">&times;</button>
-      <div class="modal-body">
-        <img id="modal-image" src="" alt="Poster" />
-        <div class="modal-text">
-          <h2 id="modal-title"></h2>
-          <div id="modal-rating" class="stars"></div>
-          <p id="modal-description"></p>
-          
-          <div class="modal-actions-inline">
-            <button id="watchlist-btn" class="watchlist-btn" onclick="toggleWatchlist()">Add to List</button>
-            <button class="share-btn" onclick="shareCurrentItem()"><i class="fa-solid fa-share"></i> Share</button>
-          </div>
+        <div class="market-status">
+          <span class="status-dot"></span>
+          Market Monitor
+        </div>
 
-          <div id="series-options" class="series-options" style="display: none;">
-            <div class="select-wrapper">
-              <label for="season-select">Season:</label>
-              <select id="season-select" onchange="onSeasonChange()"></select>
+      </header>
+
+
+      <!-- SIGNAL CARD -->
+      <section class="signal-card">
+
+        <div class="signal-header">
+
+          <div>
+            <span class="label">CURRENT SIGNAL</span>
+
+            <div class="signal-title">
+              <span id="signalIcon">●</span>
+              <span id="signalText">WAIT</span>
             </div>
-            <div id="episodes-container" class="episodes-container"></div>
+
+            <p id="signalDescription">
+              Waiting for market confirmation...
+            </p>
           </div>
-        </div>
-      </div>
 
-      <!-- PLAYER CONTAINER -->
-      <div class="player-wrapper">
-        <div id="player-container" class="video-container">
-          <iframe 
-            id="modal-video" 
-            src="about:blank" 
-            allowfullscreen 
-            allow="autoplay; fullscreen; picture-in-picture"
-            title="Video Player">
-          </iframe>
+          <div class="confidence">
+            <span>SETUP QUALITY</span>
+            <strong id="confidence">--</strong>
+          </div>
+
         </div>
 
-        <div id="player-quick-controls" class="player-quick-controls" style="display: none;">
-          <button class="quick-btn" onclick="skipIntro()">
-            <i class="fa-solid fa-forward-step"></i> Skip Intro (+85s)
+
+        <!-- PRICE -->
+        <div class="price-section">
+
+          <div>
+            <span>Current XAUUSD</span>
+
+            <div class="price">
+              $<span id="currentPrice">3,640.20</span>
+            </div>
+          </div>
+
+          <div class="price-change positive">
+            +0.35%
+          </div>
+
+        </div>
+
+
+        <!-- TRADE LEVELS -->
+        <div class="trade-grid">
+
+          <div class="trade-box">
+            <span>ENTRY</span>
+            <strong id="entryPrice">--</strong>
+          </div>
+
+          <div class="trade-box stop">
+            <span>STOP LOSS</span>
+            <strong id="stopLoss">--</strong>
+          </div>
+
+          <div class="trade-box target">
+            <span>TP1</span>
+            <strong id="takeProfit1">--</strong>
+          </div>
+
+          <div class="trade-box target">
+            <span>TP2</span>
+            <strong id="takeProfit2">--</strong>
+          </div>
+
+          <div class="trade-box">
+            <span>RISK / REWARD</span>
+            <strong id="riskReward">--</strong>
+          </div>
+
+        </div>
+
+
+        <!-- ACTIONS -->
+        <div class="actions">
+
+          <button class="btn secondary" onclick="refreshSignal()">
+            ↻ Refresh Analysis
           </button>
-          <button class="quick-btn primary" onclick="playNextEpisode()">
-            <span>Next Episode</span> <i class="fa-solid fa-chevron-right"></i>
+
+          <button class="btn primary" onclick="demoTrade()">
+            Demo Trade
           </button>
+
         </div>
-      </div>
 
-      <div id="modal-trailer-container"></div>
-      <div id="modal-cast-container"></div>
-    </div>
+      </section>
+
+
+      <!-- MARKET ANALYSIS -->
+      <section class="section">
+
+        <div class="section-title">
+          <h2>Market Analysis</h2>
+          <span>M15</span>
+        </div>
+
+
+        <div class="analysis-grid">
+
+          <div class="analysis-card">
+
+            <span>H1 TREND</span>
+
+            <strong id="h1Trend" class="bullish">
+              BULLISH
+            </strong>
+
+            <small>
+              Higher timeframe direction
+            </small>
+
+          </div>
+
+
+          <div class="analysis-card">
+
+            <span>M15 TREND</span>
+
+            <strong id="m15Trend" class="bullish">
+              BULLISH
+            </strong>
+
+            <small>
+              Current market structure
+            </small>
+
+          </div>
+
+
+          <div class="analysis-card">
+
+            <span>RSI 14</span>
+
+            <strong id="rsi">
+              57.8
+            </strong>
+
+            <small>
+              Momentum
+            </small>
+
+          </div>
+
+
+          <div class="analysis-card">
+
+            <span>ATR 14</span>
+
+            <strong id="atr">
+              6.2
+            </strong>
+
+            <small>
+              Volatility
+            </small>
+
+          </div>
+
+
+          <div class="analysis-card">
+
+            <span>EMA 50</span>
+
+            <strong id="ema50">
+              3,642.10
+            </strong>
+
+            <small>
+              Short-term trend
+            </small>
+
+          </div>
+
+
+          <div class="analysis-card">
+
+            <span>EMA 200</span>
+
+            <strong id="ema200">
+              3,628.40
+            </strong>
+
+            <small>
+              Long-term trend
+            </small>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- AI EXPLANATION -->
+      <section class="section">
+
+        <div class="section-title">
+          <h2>AI Analysis</h2>
+          <span>AI ASSISTANT</span>
+        </div>
+
+        <div class="ai-card">
+
+          <div class="ai-icon">
+            ✦
+          </div>
+
+          <div>
+
+            <h3 id="aiTitle">
+              Waiting for confirmation
+            </h3>
+
+            <p id="aiExplanation">
+              The system is monitoring XAUUSD for a high-quality
+              M15 setup. No trade should be taken until the
+              required conditions are confirmed.
+            </p>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- MARKET LEVELS -->
+      <section class="section">
+
+        <div class="section-title">
+          <h2>Important Levels</h2>
+          <span>XAUUSD</span>
+        </div>
+
+        <div class="levels">
+
+          <div class="level resistance">
+            <span>Resistance</span>
+            <strong id="resistance">
+              $3,660.00
+            </strong>
+          </div>
+
+          <div class="level current">
+            <span>Current Price</span>
+            <strong id="levelPrice">
+              $3,640.20
+            </strong>
+          </div>
+
+          <div class="level support">
+            <span>Support</span>
+            <strong id="support">
+              $3,635.00
+            </strong>
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- DISCLAIMER -->
+      <footer>
+
+        <p>
+          ⚠️ This platform is an educational trading-analysis
+          prototype. Signals are not guaranteed predictions and
+          are not financial advice. Always test strategies on a
+          demo account before using real funds.
+        </p>
+
+      </footer>
+
+    </main>
+
   </div>
 
-  <!-- SEE ALL GRID MODAL -->
-  <div id="grid-modal" class="grid-modal" role="dialog" aria-hidden="true">
-    <div class="grid-header">
-      <button class="close" onclick="closeGridModal()" aria-label="Close modal">&times;</button>
-      <h2 id="grid-modal-title">Browse</h2>
-      <div id="genre-tabs" class="genre-tabs"></div>
-    </div>
-    <div id="grid-scroll-area" class="grid-scroll-area">
-      <div id="grid-modal-results" class="grid-container"></div>
-    </div>
-  </div>
 
-  <!-- SEARCH MODAL -->
-  <div id="search-modal" class="search-modal" role="dialog" aria-hidden="true">
-    <button class="close" onclick="closeSearchModal()" aria-label="Close modal">&times;</button>
-    <div class="search-input-wrapper">
-      <input 
-        type="text" 
-        id="search-input" 
-        placeholder="Search for movies, TV shows, anime..." 
-        oninput="debounceSearch()"
-        aria-label="Search query input"
-      />
-    </div>
-    <div id="search-results" class="results"></div>
-  </div>
-
-  <!-- KEYBOARD SHORTCUTS MODAL -->
-  <div id="shortcuts-modal" class="modal" role="dialog" aria-hidden="true">
-    <div class="modal-content" style="max-width: 500px;">
-      <button class="close" onclick="closeShortcutsModal()" aria-label="Close">&times;</button>
-      <h2 style="margin-bottom: 16px; font-size: 1.4rem;">Keyboard Shortcuts</h2>
-      <ul style="list-style: none; display: flex; flex-direction: column; gap: 12px; color: #ccc; font-size: 14px;">
-        <li><kbd style="background:#222; padding:4px 8px; border-radius:4px; border:1px solid #444; color:#fff;">/</kbd> or <kbd style="background:#222; padding:4px 8px; border-radius:4px; border:1px solid #444; color:#fff;">M</kbd> — Open Search</li>
-        <li><kbd style="background:#222; padding:4px 8px; border-radius:4px; border:1px solid #444; color:#fff;">N</kbd> — Play Next Episode (In Modal)</li>
-        <li><kbd style="background:#222; padding:4px 8px; border-radius:4px; border:1px solid #444; color:#fff;">F</kbd> — Toggle Fullscreen (In Player)</li>
-        <li><kbd style="background:#222; padding:4px 8px; border-radius:4px; border:1px solid #444; color:#fff;">?</kbd> — Open This Shortcuts Guide</li>
-        <li><kbd style="background:#222; padding:4px 8px; border-radius:4px; border:1px solid #444; color:#fff;">Esc</kbd> — Close Active Modals</li>
-      </ul>
-    </div>
-  </div>
-
-  <!-- FOOTER -->
-  <footer class="footer">
-    <p>&copy; 2026 StreamVault. All rights reserved.</p>
-  </footer>
+  <script src="home.js"></script>
 
 </body>
 </html>
